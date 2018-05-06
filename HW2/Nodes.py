@@ -1,4 +1,4 @@
-import time
+
 import numpy as np
 import math
 from abc import abstractmethod
@@ -47,7 +47,6 @@ class Gate():
     @abstractmethod
     def backward(self, back_received):
         pass
-
 
 
 class Relu(Node):

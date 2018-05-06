@@ -3,18 +3,7 @@ import numpy as np
 import math
 
 
-#################
-### CONSTANTS ###
-#################
 
-INPUT = "input"
-OUTPUT = "output"
-NON_LINEAR = "non_linear"
-REGULARIZATION = "regularization"
-
-NON_LINEAR_OPTIONS = ["relu", "sigmoid", "softmax", "none"]
-REGULARIZATION_OPTIONS = ["l1", "l2"]
-LOSS_OPTIONS = ["MSE", "cross-entropy"]
 
 
 ######################
@@ -82,92 +71,10 @@ class MyDNN:
             current_input = layer.forward(current_input)
 
 
-class Layer:
-
-    def __init__(self, layer_input, layer_output, non_linearity, regularization):
-        """
-
-        :param layer_input:
-        :param layer_output:
-        :param non_linearity:
-        :param regularization:
-        """
-
-        # Assertions
-
-        assert isinstance(layer_input, int)
-        assert isinstance(layer_output, int)
-        assert non_linearity in NON_LINEAR_OPTIONS, \
-            (non_linearity + " is not a valid non-linear option")
-        assert regularization in REGULARIZATION_OPTIONS, \
-            (regularization + " is not a valid regularization option")
-
-        # Attribute setting
-
-        self.input = layer_input
-        self.output = layer_output
-        self.non_linearity = non_linearity
-        self.regularization = regularization
-        self.weights = self.initialize_weights()
-        self.bias = self.initialize_biases()
-
-    def initialize_weights(self):
-        val = 1 / (math.sqrt(self.input))
-        return np.random.uniform(-val, val)
-
-    def initialize_biases(self):
-        return np.zeros(self.input)
-
-class ReluLayer(Layer):
-
-    def __init__(self, layer_input):
-        super(ReluLayer).__init__()
-        self.layer_input = layer_input
-        self.func_forward = lambda x: np.maximum(0, x)
-        self.func_back =  # something to do
-
-    def forward(self):
-        Addition.forward()
-        Multiplication.forward()
-        nonlinaera.forward()
-
-    def backward(self):
-        before_relu = np.lf.layer_input.T @ self.weights + self.bias
-        self.layer_input = self.func_back(self.layer_output)
-        pass
 
 
-class Addition(Node):
-
-    def __init__(self, a, b):
-        self.a = a
-        self.b = b
-        self.forward_result = None
-        self.backward_result = None
-
-    def forward(self):
-        self.forward_result = self.a + self.b
-        return self.forward_result
-
-    def backward(self, incoming_gradient):
-        self.backward_result = incoming_gradient
-        return self.backward_result
 
 
-class Multiplication(Node):
-
-    def __init__(self, a, b):
-        self.a = a
-        self.b = b
-
-    def forward(self):
-        return a * b
-
-    def backward(self):
-        return
-
-
-class
 
 
 
