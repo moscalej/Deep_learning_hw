@@ -1,23 +1,19 @@
+######################
+# CORE DNN CLASS ###
+######################
+
+
 import time
 import numpy as np
 import math
-
-
-
-
-
-######################
-### CORE DNN CLASS ###
-######################
-
-
-
+from Macros import *
+from Layer import Layer
 
 
 class MyDNN:
     def __init__(self, architecture, loss, weight_decay=0):
         """
-        :param arch: A list of dictionaries used to initialize Layer objects
+        :param architecture: A list of dictionaries used to initialize Layer objects
         :param loss: a string denoting the type of loss function we should use for this network
         :param weight_decay: a float denoting the weight decay within this network. Default is 0.
         """
@@ -64,18 +60,16 @@ class MyDNN:
         """
 
         num_samples, num_dimensions = x_train.shape
+        pass
 
-    def forward(self):
-        current_input =  # something
-        for layer in layers:
+    def _forward(self, in_put):
+        current_input = in_put  # something
+        for layer in self.layers:
             current_input = layer.forward(current_input)
 
+        return current_input
 
-
-
-
-
-
-
-
-
+    def _backward(self, gradiand):
+        current_gradiant = gradiand
+        for layer in self.layers:
+            current_gradiant = layer.forward(current_gradiant)

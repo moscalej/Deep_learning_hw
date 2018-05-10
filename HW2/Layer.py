@@ -34,14 +34,22 @@ class Layer:
 
         self.input = layer_input
         self.output = layer_output
-        self.non_linearity = non_linearity
-        self.regularization = regularization
-        self.weights = self.initialize_weights()
-        self.bias = self.initialize_biases()
+        self.non_linearity = node_factory(non_linearity)
+        self.regularization = node_factory(regularization)
+        self.multiplication = node_factory('add')
+        self.addition = node_factory('multi')
+        self.weights = self._initialize_weights()
+        self.bias = self._initialize_biases()
 
-    def initialize_weights(self):
+    def forward(self, input):
+        return self.non_linearity(self.addition(self.multiplication(input, self.weights), self.addition(self.bias)))
+
+    def backward(self, det_in):
+        pass
+
+    def _initialize_weights(self):
         val = 1 / (math.sqrt(self.input))
         return np.random.uniform(-val, val)
 
-    def initialize_biases(self):
+    def _initialize_biases(self):
         return np.zeros(self.input)
