@@ -80,6 +80,6 @@ class Layer:
 
 
 if __name__ == "__main__":
-    layer1 = Layer(9, 3, "relu", "l1", 0.2)
+    layer1 = Layer(9, 3, "sigmoid", "l1", 0.2)
     layer_input = np.ones([9, 1])
     out = layer1.forward(layer_input)
