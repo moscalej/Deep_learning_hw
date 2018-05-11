@@ -99,12 +99,12 @@ class NoneNode(Node):
 class Multiplication(Gate):
     def __init__(self):
         super().__init__()
-        self.func_forward = lambda x, y: x.T @ y
+        self.func_forward = lambda x, W: W @ x
 
     def backward(self, back_received):
-        val_1 = np.ones(self.value[0].shape) * np.mean(back_received)
-        val_2 = np.ones(self.value[1].shape) * np.mean(back_received)
-        return val_1, val_2
+        gx = self.value[1].T @ back_received
+        gw = back_received @ self.value[0].T
+        return gx, gw
 
 
 class Add_node(Gate):
@@ -113,7 +113,7 @@ class Add_node(Gate):
         self.func_forward = lambda x, y: x + y
 
     def backward(self, back_received):
-        pass
+        return back_received, back_received
 
 
 def node_factory(node_name):
@@ -125,3 +125,14 @@ def node_factory(node_name):
         softmax=SoftMax
     )
     return nodes[node_name]()
+
+
+if __name__ == '__main__':
+    x = np.array([1, 2, 3, 4])
+    w = np.random.rand(20).reshape([5, 4])
+    b = np.random.rand(5)
+    m = Multiplication()
+    add = Add_node()
+    sig = Sigmoid()
+    total = sig.forward(add.forward(m.forward(x, w), b))
+    ones = [1, 1, 1, 1, 1]
