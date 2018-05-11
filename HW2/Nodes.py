@@ -130,13 +130,14 @@ def node_factory(node_name):
 
 
 class Loos:
-    def __init__(self, batch_size):
+    def __init__(self, imput_size):
         super().__init__()
+        self.error = []
         self.value = None
-        self.func_forward = lambda x, y: 0.5 * ((x - y).T @ (x - y)) / batch_size
+        self.s2_norm = lambda x, y: ((x - y).T @ (x - y))
 
     def forward(self, y, y_hat):
-        self.value = self.func_forward(y, y_hat)
+        self.error.append(self.s2_norm(y, y_hat))
 
     def backward(self, back_received):
         return np.sqrt(self.value * 2)
