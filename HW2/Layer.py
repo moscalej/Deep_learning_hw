@@ -4,8 +4,8 @@
 #################
 
 
-from Macros import *
-from Nodes import node_factory
+from HW2.Macros import *
+from HW2.Nodes import node_factory
 import math
 import numpy as np
 
@@ -15,10 +15,10 @@ class Layer:
     def __init__(self, layer_input, layer_output, non_linearity, regularization, learning_rate):
         """
 
-        :param layer_input:
-        :param layer_output:
-        :param non_linearity:
-        :param regularization:
+        :param layer_input: An int. The dimension of our input
+        :param layer_output: An int. The dimension of our output
+        :param non_linearity: “nonlinear” string, whose possible values are: “relu”, “sigmoid”, “sotmax” or “none”
+        :param regularization: “regularization” string, whose possible values are: “l1” (L1 norm), or “l2” (L2 norm)
         """
 
         # Assertions
@@ -36,7 +36,7 @@ class Layer:
         self.output = layer_output
         self.learning_rate = learning_rate
         self.non_linearity = node_factory(non_linearity)
-        self.regularization = node_factory(regularization)  # Todo need to check this part
+        # self.regularization = node_factory(regularization)  # Todo need to check this part
         self.multiplication = node_factory('add')
         self.addition = node_factory('multi')
         self.weights = self._initialize_weights()
@@ -49,7 +49,12 @@ class Layer:
         :param input: [prevuis_layer_dim,1]
         :return: values of the non linear [this layer dim,1]
         '''
-        return self.non_linearity(self.addition(self.multiplication(input, self.weights), self.addition(self.bias)))
+
+        print(type(input))
+        print(type(self.weights))
+        forward_mult = self.multiplication.forward(input, self.weights)
+        forward_add = self.addition.forward(forward_mult, self.bias)
+        return self.non_linearity.forward(forward_add)
 
     def backward(self, det_in):
         """
@@ -60,8 +65,23 @@ class Layer:
         pass
 
     def _initialize_weights(self):
+        """
+
+        :return: a vector of dimensions w X n where w is the size of this layer's output
+        and n is the size of this layers's input
+        """
         val = 1 / (math.sqrt(self.input))
-        return np.random.uniform(-val, val)
+        return np.random.uniform(-val, val, (self.output, self.input))
 
     def _initialize_biases(self):
+        """
+
+        :return: a vector of dimension n, where n is the size of this layer's input.
+        """
         return np.zeros(self.input)
+
+
+if __name__ == "__main__":
+    layer1 = Layer(9, 3, "relu", "l1", 0.2)
+    layer_input = np.ones(9)
+    layer1.forward(layer_input)
