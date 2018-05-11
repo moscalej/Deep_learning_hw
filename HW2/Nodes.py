@@ -128,6 +128,7 @@ def node_factory(node_name):
 
 
 if __name__ == '__main__':
+    np.random.seed(4)
     x = np.array([1, 2, 3, 4])
     w = np.random.rand(20).reshape([5, 4])
     b = np.random.rand(5)
@@ -135,4 +136,4 @@ if __name__ == '__main__':
     add = Add_node()
     sig = Sigmoid()
     total = sig.forward(add.forward(m.forward(x, w), b))
-    ones = [1, 1, 1, 1, 1]
+    ones = np.array([1, 1, 1, 1, 1])
