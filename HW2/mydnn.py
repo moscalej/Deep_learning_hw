@@ -43,6 +43,16 @@ class MyDNN:
 
     def fit(self, x_train, y_train, epochs, batch_size, learning_rate, x_val=None, y_val=None):
         """
+        Description:
+
+        The function will run SGD for a user-defined number of epochs, with the
+        defined batch size. On every epoch the data will be reshuffled (make sure you
+        shuffle the x’s and y’s together).
+        For every batch the data should be passed forward and gradients pass backward.
+        After gradients are computed, weights update will be performed using
+        the learning rate.
+        After every epoch the following line will be printed on screen with the values
+        of the last epoch.
 
         :param x_train: a Numpy nd-array where each row is a sample
         :param y_train: a 2d array, the labels of X in one-hot representation for classification
@@ -58,7 +68,17 @@ class MyDNN:
                 results. These dictionaries do not contain formatting information (you will
                 later use the history to print various things including plots of learning and
                 convergence curves for your networks).
+
+
+
         """
+        result = {}
+        Data = x_train.copy()
+        Label = y_train.copy()
+
+        for episode in range(1, epochs + 1):
+
+
 
         num_samples, num_dimensions = x_train.shape
         pass

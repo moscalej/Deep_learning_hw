@@ -73,21 +73,6 @@ class Sigmoid(Node):
         return derivative_input * back_received
 
 
-class SoftMax(Node):  # todo just copy past from adove
-    def __init__(self):
-        super().__init__()
-        self.func_forward = lambda x: np.exp(x) / np.sum(np.exp(x))
-        self.func_backward = lambda x: self.func_forward(x)(1 - self.func_forward(x))
-
-    def backward(self, back_received):
-        """
-        Need to be done
-        :param back_received:
-        :return:
-        """
-        pass
-
-
 class NoneNode(Node):
     def __init__(self):
         super().__init__()
@@ -95,7 +80,7 @@ class NoneNode(Node):
         self.func_backward = lambda x: x
 
     def backward(self, back_received):
-        super().backward(back_received)
+        return back_received
 
 
 class Multiplication(Gate):  # its for a matrix and a vector
@@ -118,17 +103,6 @@ class Add_node(Gate):
         return back_received, back_received
 
 
-def node_factory(node_name):
-    nodes = dict(
-        multi=Multiplication,
-        add=Add_node,
-        relu=Relu,
-        sigmoid=Sigmoid,
-        softmax=SoftMax
-    )
-    return nodes[node_name]()
-
-
 class SoftMax(Sigmoid):
 
     def __init__(self):
@@ -144,8 +118,8 @@ class Loos_l2:
         self.gradiand = []
         self.value = None
         self.norm = lambda x, y: ((x - y).T @ (x - y))
-
     def forward(self, y, y_hat):
+        y = np
         sq_norm = self.norm(y, y_hat)
         self.error.append(0.5 * sq_norm * self.imput_size_inv)
         self.gradiand.append(np.sqrt(sq_norm) * self.imput_size_inv)
@@ -175,6 +149,18 @@ class Loos_l1:  # Todo need to check this function
         return mean_gradiand
 
 
+def node_factory(node_name):
+    nodes = dict(
+        multi=Multiplication,
+        add=Add_node,
+        relu=Relu,
+        sigmoid=Sigmoid,
+        softmax=SoftMax,
+        l2=Loos_l2,
+        l1=Loos_l1
+    )
+    return nodes[node_name]()
+
 if __name__ == '__main__':
     np.random.seed(4)
     x = np.array([1, 2, 3, 4])
@@ -187,5 +173,5 @@ if __name__ == '__main__':
     ones = np.array([1, 1, 1, 1, 1])
     y = np.random.randint(0, 4, 5)
     y_hat = np.random.randint(0, 4, 5)
-    l = Loos(5)
-    l.forward(y, y_hat)
+    # l = Loos(5)
+    # l.forward(y, y_hat)
