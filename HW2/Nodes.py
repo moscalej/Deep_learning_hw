@@ -21,7 +21,7 @@ class Node:
         self.func_forward = None
 
     def forward(self, forward_in):
-        self.value = forward_in
+        self.value = forward_in  # on forward we save x
         return self.func_forward(forward_in)
 
     @abstractmethod
@@ -57,17 +57,17 @@ class Relu(Node):
     def backward(self, back_received):
         self.value[self.value >= 0] = 1
         self.value[self.value < 0] = 0
-        return self.value * np.mean(back_received)  # todo be sure about bacward
+        return self.value * np.sum(back_received)  # todo be sure about bacward
 
 
 class Sigmoid(Node):
     def __init__(self):
         super().__init__()
         self.func_forward = lambda x: 1 / (1 + np.exp(-1 * x))
-        self.func_backward = lambda x: self.func_forward(x)(1 - self.func_forward(x))
+        self.func_backward = lambda x: self.func_forward(x)(1 - self.func_forward(x))  # sigmoid '
 
     def backward(self, back_received):
-        return self.func_backward(self.value) * np.mean(back_received)
+        return self.func_backward(self.value) * np.sum(back_received)
 
 
 class SoftMax(Node):  # todo just copy past from adove
