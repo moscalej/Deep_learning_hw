@@ -34,7 +34,8 @@ class MyDNN:
             layer_output = layer[OUTPUT]
             non_linearity = layer[NON_LINEAR]
             regularization = layer[REGULARIZATION]
-            new_layer = Layer(layer_input, layer_output, non_linearity, regularization)
+            learning_rate = layer[LEARNING_RATE]
+            new_layer = Layer(layer_input, layer_output, non_linearity, regularization, learning_rate)
             self.layers.append(new_layer)
 
         self.loss = loss
