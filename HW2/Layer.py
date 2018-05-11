@@ -54,14 +54,13 @@ class Layer:
         forward_add = self.addition.forward(forward_mult, self.bias)
         return self.non_linearity.forward(forward_add)
 
-    def backward(self, det_in):
+    def backward(self, gradiant_in):
         """
         Control the backward of the layer and will update the values of W and b
-        :param det_in:
+        :param gradiant_in:
         :return: (wights, bias) tuple. derivatives to the previous layer [ ]
         """
-        backward_non_linearity = self.non_linearity.backward(det_in)
-        print(backward_non_linearity.shape)
+        backward_non_linearity = self.non_linearity.backward(gradiant_in)
         backward_add, grad_b = self.addition.backward(backward_non_linearity)
         backward_mult_x, backward_mult_w = self.multiplication.backward(backward_add)
         self.bias -= self.learning_rate * grad_b
@@ -70,7 +69,6 @@ class Layer:
 
     def _initialize_weights(self):
         """
-
         :return: a vector of dimensions w X n where w is the size of this layer's output
         and n is the size of this layers's input
         """
