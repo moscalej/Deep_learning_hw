@@ -37,8 +37,8 @@ class Layer:
         self.learning_rate = learning_rate
         self.non_linearity = node_factory(non_linearity)
         # self.regularization = node_factory(regularization)  # Todo need to check this part
-        self.multiplication = node_factory('add')
-        self.addition = node_factory('multi')
+        self.multiplication = node_factory('multi')
+        self.addition = node_factory('add')
         self.weights = self._initialize_weights()
         self.bias = self._initialize_biases()
 
@@ -50,8 +50,6 @@ class Layer:
         :return: values of the non linear [this layer dim,1]
         '''
 
-        print(type(input))
-        print(type(self.weights))
         forward_mult = self.multiplication.forward(input, self.weights)
         forward_add = self.addition.forward(forward_mult, self.bias)
         return self.non_linearity.forward(forward_add)
@@ -83,5 +81,5 @@ class Layer:
 
 if __name__ == "__main__":
     layer1 = Layer(9, 3, "relu", "l1", 0.2)
-    layer_input = np.ones(9)
-    layer1.forward(layer_input)
+    layer_input = np.ones([9, 1])
+    print(layer1.forward(layer_input))
