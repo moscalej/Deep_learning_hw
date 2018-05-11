@@ -55,9 +55,9 @@ class Relu(Node):
         self.func_forward = lambda x: np.maximum(x, 0)
 
     def backward(self, back_received):
-        self.value[self.value > 0] = 1
-        self.value[self.value <= 0] = 0
-        return self.value * np.mean(back_received)
+        self.value[self.value >= 0] = 1
+        self.value[self.value < 0] = 0
+        return self.value * np.mean(back_received)  # todo be sure about bacward
 
 
 class Sigmoid(Node):
@@ -70,7 +70,7 @@ class Sigmoid(Node):
         return self.func_backward(self.value) * np.mean(back_received)
 
 
-class SoftMax(Node):
+class SoftMax(Node):  # todo just copy past from adove
     def __init__(self):
         super().__init__()
         self.func_forward = lambda x: np.exp(x) / np.sum(np.exp(x))

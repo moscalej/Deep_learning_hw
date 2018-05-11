@@ -35,7 +35,7 @@ class Layer:
         self.input = layer_input
         self.output = layer_output
         self.non_linearity = node_factory(non_linearity)
-        self.regularization = node_factory(regularization)
+        self.regularization = node_factory(regularization)  # Todo need to check this part
         self.multiplication = node_factory('add')
         self.addition = node_factory('multi')
         self.weights = self._initialize_weights()
