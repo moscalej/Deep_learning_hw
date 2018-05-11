@@ -129,17 +129,24 @@ def node_factory(node_name):
     return nodes[node_name]()
 
 
-class Loos:
-    def __init__(self, imput_size):
+class SoftMax(Sigmoid):
+
+    def __init__(self):
         super().__init__()
+        self.func_forward = lambda x: np.exp(x) / np.sum(np.exp(x))
+        self.func_backward = lambda x: self.func_forward(x) * (1 - self.func_forward(x))
+
+
+class Loos_l2:
+    def __init__(self, imput_size):
         self.imput_size_inv = 1 / imput_size
         self.error = []
         self.gradiand = []
         self.value = None
-        self.s2_norm = lambda x, y: ((x - y).T @ (x - y))
+        self.norm = lambda x, y: ((x - y).T @ (x - y))
 
     def forward(self, y, y_hat):
-        sq_norm = self.s2_norm(y, y_hat)
+        sq_norm = self.norm(y, y_hat)
         self.error.append(0.5 * sq_norm * self.imput_size_inv)
         self.gradiand.append(np.sqrt(sq_norm) * self.imput_size_inv)
 
@@ -149,7 +156,23 @@ class Loos:
         return mean_gradiand
 
 
+class Loos_l1:  # Todo need to check this function
+    def __init__(self, imput_size):
+        self.imput_size_inv = 1 / imput_size
+        self.error = []
+        self.gradiand = []
+        self.value = None
+        self.norm = lambda x, y: np.sum(np.abs(x - y))
 
+    def forward(self, y, y_hat):
+        sq_norm = self.norm(y, y_hat)
+        self.error.append(sq_norm * self.imput_size_inv)
+        self.gradiand.append(np.sqrt(sq_norm) * self.imput_size_inv)
+
+    def backward(self):
+        mean_gradiand = np.mean(self.gradiand)
+        self.gradiand = []
+        return mean_gradiand
 
 
 if __name__ == '__main__':
