@@ -4,8 +4,8 @@
 #################
 
 
-from Macros import *
-from Nodes import node_factory
+from HW2.Macros import *
+from HW2.Nodes import node_factory
 import math
 import numpy as np
 
@@ -58,9 +58,14 @@ class Layer:
         """
         Control the backward of the layer and will update the values of W and b
         :param det_in:
-        :return: derivatives to the previous layer [ ]
+        :return: (wights, bias) tuple. derivatives to the previous layer [ ]
         """
-        pass
+        backward_non_linearity = self.non_linearity.backward(det_in)
+        backward_add = self.addition.backward(backward_non_linearity)
+        backward_mult = self.multiplication.backward(backward_add)
+        backward_bias = backward_add
+        backward_weights = backward_mult
+        return backward_weights, backward_bias
 
     def _initialize_weights(self):
         """
@@ -82,4 +87,5 @@ class Layer:
 if __name__ == "__main__":
     layer1 = Layer(9, 3, "sigmoid", "l1", 0.2)
     layer_input = np.ones([9, 1])
-    out = layer1.forward(layer_input)
+    forward_1 = layer1.forward(layer_input)
+    backward_1 = layer1.backward([0.5, 0.5, 0.5])
