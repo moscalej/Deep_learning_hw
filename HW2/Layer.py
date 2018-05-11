@@ -12,7 +12,7 @@ import numpy as np
 
 class Layer:
 
-    def __init__(self, layer_input, layer_output, non_linearity, regularization):
+    def __init__(self, layer_input, layer_output, non_linearity, regularization, learning_rate):
         """
 
         :param layer_input:
@@ -34,6 +34,7 @@ class Layer:
 
         self.input = layer_input
         self.output = layer_output
+        self.learning_rate = learning_rate
         self.non_linearity = node_factory(non_linearity)
         self.regularization = node_factory(regularization)  # Todo need to check this part
         self.multiplication = node_factory('add')
@@ -42,9 +43,20 @@ class Layer:
         self.bias = self._initialize_biases()
 
     def forward(self, input):
+        '''
+        Calculate the forward value
+
+        :param input: [prevuis_layer_dim,1]
+        :return: values of the non linear [this layer dim,1]
+        '''
         return self.non_linearity(self.addition(self.multiplication(input, self.weights), self.addition(self.bias)))
 
     def backward(self, det_in):
+        """
+        Control the backward of the layer and will update the values of W and b
+        :param det_in:
+        :return: derivatives to the previous layer [ ]
+        """
         pass
 
     def _initialize_weights(self):

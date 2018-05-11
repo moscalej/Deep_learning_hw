@@ -67,7 +67,8 @@ class Sigmoid(Node):
         self.func_backward = lambda x: self.func_forward(x)(1 - self.func_forward(x))  # sigmoid '
 
     def backward(self, back_received):
-        return self.func_backward(self.value) * np.sum(back_received)
+        derivative_input = self.func_backward(self.value)
+        return derivative_input * np.sum(back_received)
 
 
 class SoftMax(Node):  # todo just copy past from adove
