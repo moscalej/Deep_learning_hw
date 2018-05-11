@@ -4,8 +4,8 @@
 #################
 
 
-from HW2.Macros import *
-from HW2.Nodes import node_factory
+from Macros import *
+from Nodes import node_factory
 import math
 import numpy as np
 
@@ -61,11 +61,12 @@ class Layer:
         :return: (wights, bias) tuple. derivatives to the previous layer [ ]
         """
         backward_non_linearity = self.non_linearity.backward(det_in)
-        backward_add = self.addition.backward(backward_non_linearity)
-        backward_mult = self.multiplication.backward(backward_add)
-        backward_bias = backward_add
-        backward_weights = backward_mult
-        return backward_weights, backward_bias
+        print(backward_non_linearity.shape)
+        backward_add, grad_b = self.addition.backward(backward_non_linearity)
+        backward_mult_x, backward_mult_w = self.multiplication.backward(backward_add)
+        self.bias -= self.learning_rate * grad_b
+        self.weights -= self.learning_rate * backward_mult_w
+        return backward_mult_x
 
     def _initialize_weights(self):
         """
@@ -88,4 +89,5 @@ if __name__ == "__main__":
     layer1 = Layer(9, 3, "sigmoid", "l1", 0.2)
     layer_input = np.ones([9, 1])
     forward_1 = layer1.forward(layer_input)
-    backward_1_weights, backward_1_bias = layer1.backward([0.5, 0.5, 0.5])
+    leyer_grad = np.array([0.5, 0.5, 0.5]).reshape([3, 1])
+    backward_1_bias = layer1.backward(leyer_grad)
