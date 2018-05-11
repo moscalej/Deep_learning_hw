@@ -132,15 +132,21 @@ def node_factory(node_name):
 class Loos:
     def __init__(self, imput_size):
         super().__init__()
+        self.imput_size_inv = 1 / imput_size
         self.error = []
+        self.gradiand = []
         self.value = None
         self.s2_norm = lambda x, y: ((x - y).T @ (x - y))
 
     def forward(self, y, y_hat):
-        self.error.append(self.s2_norm(y, y_hat))
+        sq_norm = self.s2_norm(y, y_hat)
+        self.error.append(0.5 * sq_norm * self.imput_size_inv)
+        self.gradiand.append(np.sqrt(sq_norm) * self.imput_size_inv)
 
-    def backward(self, back_received):
-        return np.sqrt(self.value * 2)
+    def backward(self):
+        mean_gradiand = np.mean(self.gradiand)
+        self.gradiand = []
+        return mean_gradiand
 
 
 
@@ -156,3 +162,7 @@ if __name__ == '__main__':
     sig = Sigmoid()
     total = sig.forward(add.forward(m.forward(x, w), b))
     ones = np.array([1, 1, 1, 1, 1])
+    y = np.random.randint(0, 4, 5)
+    y_hat = np.random.randint(0, 4, 5)
+    l = Loos(5)
+    l.forward(y, y_hat)
