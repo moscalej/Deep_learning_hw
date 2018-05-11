@@ -64,11 +64,11 @@ class Sigmoid(Node):
     def __init__(self):
         super().__init__()
         self.func_forward = lambda x: 1 / (1 + np.exp(-1 * x))
-        self.func_backward = lambda x: self.func_forward(x)(1 - self.func_forward(x))  # sigmoid '
+        self.func_backward = lambda x: self.func_forward(x) * (1 - self.func_forward(x))  # sigmoid '
 
     def backward(self, back_received):
         derivative_input = self.func_backward(self.value)
-        return derivative_input * np.sum(back_received)
+        return derivative_input * back_received
 
 
 class SoftMax(Node):  # todo just copy past from adove
@@ -96,7 +96,7 @@ class NoneNode(Node):
         super().backward(back_received)
 
 
-class Multiplication(Gate):
+class Multiplication(Gate):  # its for a matrix and a vector
     def __init__(self):
         super().__init__()
         self.func_forward = lambda x, W: W @ x
