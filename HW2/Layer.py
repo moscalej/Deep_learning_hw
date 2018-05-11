@@ -4,8 +4,8 @@
 #################
 
 
-from HW2.Macros import *
-from HW2.Nodes import node_factory
+from Macros import *
+from Nodes import node_factory
 import math
 import numpy as np
 
@@ -69,17 +69,17 @@ class Layer:
         and n is the size of this layers's input
         """
         val = 1 / (math.sqrt(self.input))
-        return np.random.uniform(-val, val, (self.output, self.input))
+        return np.random.uniform(-val, val, [self.output, self.input])
 
     def _initialize_biases(self):
         """
 
         :return: a vector of dimension n, where n is the size of this layer's input.
         """
-        return np.zeros(self.input)
+        return np.zeros([self.output, 1])
 
 
 if __name__ == "__main__":
     layer1 = Layer(9, 3, "relu", "l1", 0.2)
     layer_input = np.ones([9, 1])
-    print(layer1.forward(layer_input))
+    out = layer1.forward(layer_input)

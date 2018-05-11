@@ -4,6 +4,8 @@ import math
 from abc import abstractmethod
 
 
+# todo strong check dimentions
+
 class Node:
     """
     This class is for the nodes from a single input to a single output
@@ -125,6 +127,22 @@ def node_factory(node_name):
         softmax=SoftMax
     )
     return nodes[node_name]()
+
+
+class Loos:
+    def __init__(self, batch_size):
+        super().__init__()
+        self.value = None
+        self.func_forward = lambda x, y: 0.5 * ((x - y).T @ (x - y)) / batch_size
+
+    def forward(self, y, y_hat):
+        self.value = self.func_forward(y, y_hat)
+
+    def backward(self, back_received):
+        return np.sqrt(self.value * 2)
+
+
+
 
 
 if __name__ == '__main__':
