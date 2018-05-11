@@ -88,4 +88,4 @@ if __name__ == "__main__":
     layer1 = Layer(9, 3, "sigmoid", "l1", 0.2)
     layer_input = np.ones([9, 1])
     forward_1 = layer1.forward(layer_input)
-    backward_1 = layer1.backward([0.5, 0.5, 0.5])
+    backward_1_weights, backward_1_bias = layer1.backward([0.5, 0.5, 0.5])
