@@ -77,7 +77,7 @@ class MyDNN:
         history = []
         Data = x_train.copy()
         sumple_num = Data.shape[0]
-        Label = self._one_shot(y_train.copy())
+        Label = self._one_hot(y_train.copy())
         time.clock()
         t_current = 0
         for episode in range(1, epochs + 1):
@@ -108,17 +108,20 @@ class MyDNN:
         current = 0
         acc = 0.
         loss = []
-        for batch in range(round(sumple_num / batch_size) - 1):
+        print(data_e.shape, label_e.shape, sumple_num)
+        for batch in range(50_000):
 
-            for sample in range(batch):
-                print(current)
-                y_hat = self._forward(data_e[current])
-                self.loss.forward(y_hat, label_e[current])
-                if np.argmax(y_hat) == np.argmax(Label[sample]):
-                    acc += 1
-                current += 1
+            # for sample in range(batch):
+
+            y_hat = self._forward(data_e[current])
+            self.loss.forward(y_hat, label_e[current])
+            if np.argmax(y_hat) == np.argmax(Label[current]):
+                acc += 1
+            current += 1
             loss.append(self.loss.get_loss())
             self._backward(self.loss.backward())
+            if current == 49_999:
+                break
 
         return sum(loss), (acc / sumple_num)
 
@@ -126,7 +129,7 @@ class MyDNN:
         acc = 0.
         loss = []
         sumple_num = Data.shape[0]
-        for sample in range(sumple_num):
+        for sample in range(sumple_num - 2):
             y_hat = self._forward(Data[sample])
             self.loss.forward(y_hat, Label[sample])
             if np.argmax(y_hat) == np.argmax(Label[sample]):
@@ -144,10 +147,11 @@ class MyDNN:
 
     def _backward(self, gradiand):
         current_gradiant = gradiand
-        for layer in self.layers:
-            current_gradiant = layer.backward(current_gradiant)
 
-    def _one_shot(self, labels):
+        for index in range(len(self.layers) - 1, -1, -1):
+            current_gradiant = self.layers[index].backward(current_gradiant)
+
+    def _one_hot(self, labels):
         range = np.max(labels) - np.min(labels) + 1
         Labels_one = np.zeros([len(labels), range])
         Labels_one[np.arange(len(labels)), labels.reshape(-1)] = 1

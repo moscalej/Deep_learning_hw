@@ -19,10 +19,6 @@ def generate_layer(input_dims, output_dims, non_linearity, regularization, learn
 
 
 
-
-
-
-
 if __name__ == "__main__":
     data_url = "http://deeplearning.net/data/mnist/mnist.pkl.gz"
     urllib.request.urlretrieve(data_url, "mnist.pkl.gz")
@@ -36,7 +32,7 @@ if __name__ == "__main__":
 
     layers = [generate_layer(num_pixels, 100, "relu", "l2", 0.2)]
     layers.append(generate_layer(100, 50, "relu", "l2", 0.2))
-    layers.append(generate_layer(50, 9, "softmax", "l2", 0.2))
+    layers.append(generate_layer(50, 10, "softmax", "l2", 0.2))
 
     net = MyDNN(layers, "MSE")  # MSE
     net.fit(training_samples, train_set[1], 300, 1, 0.02, validation_samples, valid_set[1])

@@ -59,7 +59,7 @@ class Relu(Node):
     def backward(self, back_received):
         self.value[self.value >= 0] = 1
         self.value[self.value < 0] = 0
-        return self.value * np.sum(back_received)  # todo be sure about bacward
+        return self.value * back_received
 
 
 class Sigmoid(Node):
@@ -111,37 +111,53 @@ class SoftMax(Sigmoid):
         self.func_backward = lambda x: self.func_forward(x) * (1 - self.func_forward(x))
 
 
-class Loos_l2:
+class Loss:
     def __init__(self):
         self.imput_size_inv = 1
-        self.error = []
-        self.gradiand = []
+        self.error = None
+        self.gradiand = None
         self.value = None
-        self.norm = lambda x, y: ((x - y).T @ (x - y))
+
 
     def set_input_size(self, m):
         self.imput_size_inv = 1 / m
-    def forward(self, y, y_hat):
 
-        sq_norm = self.norm(y, y_hat)
-        self.error.append(0.5 * sq_norm * self.imput_size_inv)
-        self.gradiand.append(np.sqrt(sq_norm) * self.imput_size_inv)
+    @abstractmethod
+    def forward(self, y_hat, y):
+        pass
+
 
     def backward(self):
-        mean_gradiand = np.mean(self.gradiand)
-        self.gradiand = []
-        return mean_gradiand
+        return self.gradiand
 
     def get_loss(self):
-        return sum(self.error)
-
-    def reset(self):
-        self.error = []
-        self.gradiand = []
+        return self.error
 
 
+class MSE(Loss):
+    def __init__(self):
+        super().__init__()
+        self.norm = lambda x, y: ((x - y).T @ (x - y))
 
-class Loos_l1:  # Todo need to check this function
+    def forward(self, y_hat, y):
+        sq_norm = self.norm(y_hat, y.reshape([len(y), 1]))
+        self.error(0.5 * sq_norm * self.imput_size_inv)
+        self.gradiand = np.sqrt(sq_norm) * self.imput_size_inv
+
+
+class Entropy(Loss):
+    def __init__(self):
+        super().__init__()
+        self.func = lambda y, y_hat: - np.sum(y * np.log(y_hat))
+
+    def forward(self, y_hat, y):
+        y_hat = y_hat.reshape([len(y_hat), 1])
+        y = y.reshape([len(y), 1])
+        self.error = self.func(y, y_hat) * self.imput_size_inv
+        self.gradiand = (y_hat - y) * self.imput_size_inv
+
+
+class Normal_l1:  # Todo need to check this function
     def __init__(self, imput_size):
         self.imput_size_inv = 1 / imput_size
         self.error = []
@@ -167,8 +183,10 @@ def node_factory(node_name):
         relu=Relu,
         sigmoid=Sigmoid,
         softmax=SoftMax,
-        MSE=Loos_l2,
-        l1=Loos_l1
+        MSE=MSE,
+        Entropy=Entropy,
+
+        l1=Normal_l1
     )
     return nodes[node_name]()
 
