@@ -112,14 +112,17 @@ class SoftMax(Sigmoid):
 
 
 class Loos_l2:
-    def __init__(self, imput_size):
-        self.imput_size_inv = 1 / imput_size
+    def __init__(self):
+        self.imput_size_inv = 1
         self.error = []
         self.gradiand = []
         self.value = None
         self.norm = lambda x, y: ((x - y).T @ (x - y))
+
+    def set_input_size(self, m):
+        self.imput_size_inv = 1 / m
     def forward(self, y, y_hat):
-        y = np
+
         sq_norm = self.norm(y, y_hat)
         self.error.append(0.5 * sq_norm * self.imput_size_inv)
         self.gradiand.append(np.sqrt(sq_norm) * self.imput_size_inv)
@@ -128,6 +131,14 @@ class Loos_l2:
         mean_gradiand = np.mean(self.gradiand)
         self.gradiand = []
         return mean_gradiand
+
+    def get_loss(self):
+        return sum(self.error)
+
+    def reset(self):
+        self.error = []
+        self.gradiand = []
+
 
 
 class Loos_l1:  # Todo need to check this function
@@ -156,7 +167,7 @@ def node_factory(node_name):
         relu=Relu,
         sigmoid=Sigmoid,
         softmax=SoftMax,
-        l2=Loos_l2,
+        MSE=Loos_l2,
         l1=Loos_l1
     )
     return nodes[node_name]()

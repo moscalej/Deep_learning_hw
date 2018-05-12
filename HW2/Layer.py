@@ -50,6 +50,7 @@ class Layer:
         :return: values of the non linear [this layer dim,1]
         '''
 
+
         forward_mult = self.multiplication.forward(input, self.weights)
         forward_add = self.addition.forward(forward_mult, self.bias)
         return self.non_linearity.forward(forward_add)
@@ -84,7 +85,7 @@ class Layer:
 
 
 if __name__ == "__main__":
-    layer1 = Layer(9, 3, "sigmoid", "l1", 0.2)
+    layer1 = Layer(9, 3, "softmax", "l1", 0.2)
     layer_input = np.ones([9, 1])
     forward_1 = layer1.forward(layer_input)
     leyer_grad = np.array([0.5, 0.5, 0.5]).reshape([3, 1])
