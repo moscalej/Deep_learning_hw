@@ -12,9 +12,10 @@ import numpy as np
 
 class Layer:
 
-    def __init__(self, layer_input, layer_output, non_linearity, regularization, learning_rate):
+    def __init__(self, layer_input, layer_output, non_linearity, regularization, learning_rate, weight_decay=0):
         """
 
+        :param weight_decay:
         :param layer_input: An int. The dimension of our input
         :param layer_output: An int. The dimension of our output
         :param non_linearity: “nonlinear” string, whose possible values are: “relu”, “sigmoid”, “sotmax” or “none”
@@ -31,6 +32,7 @@ class Layer:
             (regularization + " is not a valid regularization option")
 
         # Attribute setting
+        self.weight_decay = weight_decay
         self.input = layer_input
         self.output = layer_output
         self.learning_rate = learning_rate
@@ -51,7 +53,7 @@ class Layer:
         :return: values of the non linear [this layer dim,1]
         """
         self.weights_norm = np.linalg.norm(self.weights)
-        if self.regularization == REGULARIZATION_OPTIONS[0]:  # MSE
+        if self.regularization == REGULARIZATION_OPTIONS[0]:
             self.weights_norm = np.square(self.weights_norm)
 
         forward_mult = self.multiplication.forward(input, self.weights)
@@ -67,8 +69,9 @@ class Layer:
         backward_non_linearity = self.non_linearity.backward(gradiant_in)
         backward_add, grad_b = self.addition.backward(backward_non_linearity)
         backward_mult_x, backward_mult_w = self.multiplication.backward(backward_add)
-        # TODO need to review this part
-        self.bias -= self.learning_rate * grad_b
+
+        # TODO Re check this part
+        self.bias -= self.learning_rate * np.mean(grad_b, axis=1).reshape(self.bias.shape)
         if self.regularization == REGULARIZATION_OPTIONS[1]:    # L2
             self.weights -= self.learning_rate * (backward_mult_w + 2 * self.weight_decay * self.weights)
         else:                                                   # L1
@@ -92,8 +95,10 @@ class Layer:
 
 
 if __name__ == "__main__":
-    layer1 = Layer(9, 3, "softmax", "l1", 0.2)
-    layer_input = np.ones([9, 1])
-    forward_1 = layer1.forward(layer_input)
-    leyer_grad = np.array([0.5, 0.5, 0.5]).reshape([3, 1])
-    backward_1_bias = layer1.backward(leyer_grad)
+    for non_linear in ["relu", "sigmoid", "softmax", "none"]:
+        for loss in ['l1', 'l2']:
+            layer1 = Layer(9, 3, non_linear, loss, 0.2, 0.1)
+            layer_input = np.ones([9, 8])
+            forward_1 = layer1.forward(layer_input)
+            backward_1_bias = layer1.backward(forward_1)
+            print('Pass')

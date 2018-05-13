@@ -89,7 +89,6 @@ class Multiplication(Gate):
         self.func_forward = lambda X, W: W @ X
 
     def backward(self, back_received):
-        # todo need to re do for batch
         gx = self.value[1].T @ back_received
         gw = back_received @ self.value[0].T
         return gx, gw
@@ -178,7 +177,8 @@ def node_factory(node_name):
         relu=Relu,
         sigmoid=Sigmoid,
         softmax=SoftMax,
-        l1=Normal_l1
+        l1=Normal_l1,
+        none=NoneNode
     )
     return nodes[node_name]()
 
