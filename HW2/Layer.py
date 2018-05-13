@@ -12,9 +12,10 @@ import numpy as np
 
 class Layer:
 
-    def __init__(self, layer_input, layer_output, non_linearity, regularization, learning_rate):
+    def __init__(self, layer_input, layer_output, non_linearity, regularization, learning_rate, batch_size=1):
         """
 
+        :param batch_size:
         :param layer_input: An int. The dimension of our input
         :param layer_output: An int. The dimension of our output
         :param non_linearity: “nonlinear” string, whose possible values are: “relu”, “sigmoid”, “sotmax” or “none”
@@ -36,20 +37,22 @@ class Layer:
         self.output = layer_output
         self.learning_rate = learning_rate
         self.non_linearity = node_factory(non_linearity)
+        self.batch_size = batch_size
+        self.back_prob_number = 1
         # self.regularization = node_factory(regularization)  # Todo need to check this part
         self.multiplication = node_factory('multi')
         self.addition = node_factory('add')
         self.weights = self._initialize_weights()
         self.bias = self._initialize_biases()
+        self.weights_average = []
+        self.bias_average = []
 
     def forward(self, input):
-        '''
+        """
         Calculate the forward value
-
         :param input: [prevuis_layer_dim,1]
         :return: values of the non linear [this layer dim,1]
-        '''
-
+        """
 
         forward_mult = self.multiplication.forward(input, self.weights)
         forward_add = self.addition.forward(forward_mult, self.bias)
@@ -64,8 +67,14 @@ class Layer:
         backward_non_linearity = self.non_linearity.backward(gradiant_in)
         backward_add, grad_b = self.addition.backward(backward_non_linearity)
         backward_mult_x, backward_mult_w = self.multiplication.backward(backward_add)
-        self.bias -= self.learning_rate * grad_b
-        self.weights -= self.learning_rate * backward_mult_w
+        self.bias_average.append(self.learning_rate * grad_b)
+        self.weights_average.append(self.learning_rate * backward_mult_w)
+        if self.back_prob_number % self.batch_size == 0:
+            self.weights -= np.mean(self.weights_average)
+            self.bias -= np.mean(self.bias_average)
+            self.weights_average = []
+            self.bias_average = []
+
         return backward_mult_x
 
     def _initialize_weights(self):
