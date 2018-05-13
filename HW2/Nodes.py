@@ -1,6 +1,6 @@
 
 import numpy as np
-import math
+import Macros
 from abc import abstractmethod
 
 
@@ -108,28 +108,26 @@ class SoftMax(Sigmoid):
 
     def __init__(self):
         super().__init__()
-        self.func_forward = lambda x: np.exp(x) / np.sum(np.exp(x))
+        self.func_forward = lambda x: np.exp(x) / np.sum(np.exp(x), axis=0)
         self.func_backward = lambda x: self.func_forward(x) * (1 - self.func_forward(x))
 
 
 class Loss: # Todo re think for batch and return row vector
     def __init__(self):
-        self.imput_size_inv = 1
+        self.input_size_inv = 1
         self.error = None
-        self.gradiand = None
+        self.gradiant = None
         self.value = None
 
-
     def set_input_size(self, m):
-        self.imput_size_inv = 1 / m
+        self.input_size_inv = 1 / m
 
     @abstractmethod
     def forward(self, y_hat, y):
         pass
 
-
     def backward(self):
-        return self.gradiand
+        return self.gradiant
 
     def get_loss(self):
         return self.error
@@ -137,25 +135,30 @@ class Loss: # Todo re think for batch and return row vector
 
 class MSE(Loss):
     def __init__(self):
+
         super().__init__()
-        self.norm = lambda x, y: ((x - y).T @ (x - y))
+
+        # a row vector of dimensions 1 x d where d is the number of possible
+        # classifications we have for a particular sample.
+
+        self.norm = lambda x, y: np.sum(np.square((x - y)), axis=0)
 
     def forward(self, y_hat, y):
-        sq_norm = self.norm(y_hat, y.reshape([len(y), 1]))
-        self.error(0.5 * sq_norm * self.imput_size_inv)
-        self.gradiand = np.sqrt(sq_norm) * self.imput_size_inv
+        sq_norm = self.norm(y_hat, y)
+        self.error = (0.5 * sq_norm * self.input_size_inv)
+        self.gradiant = np.sqrt(sq_norm) * self.input_size_inv
 
 
 class Entropy(Loss):
-    def __init__(self):
+    def __init__(self, sum_of_weight_norms):
         super().__init__()
         self.func = lambda y, y_hat: - np.sum(y * np.log(y_hat))
 
     def forward(self, y_hat, y):
         y_hat = y_hat.reshape([len(y_hat), 1])
         y = y.reshape([len(y), 1])
-        self.error = self.func(y, y_hat) * self.imput_size_inv
-        self.gradiand = (y_hat - y) * self.imput_size_inv
+        self.error = self.func(y, y_hat) * self.input_size_inv
+        self.gradiand = (y_hat - y) * self.input_size_inv
 
 
 class Normal_l1:  # Todo need to check this function

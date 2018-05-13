@@ -31,24 +31,28 @@ class Layer:
             (regularization + " is not a valid regularization option")
 
         # Attribute setting
-
         self.input = layer_input
         self.output = layer_output
         self.learning_rate = learning_rate
         self.non_linearity = node_factory(non_linearity)
-        # self.regularization = node_factory(regularization)  # Todo need to check this part
+        self.regularization = regularization
         self.multiplication = node_factory('multi')
         self.addition = node_factory('add')
         self.weights = self._initialize_weights()
         self.bias = self._initialize_biases()
+        self.weights_norm = np.linalg.norm(self.weights)
 
     def forward(self, input):
         """
+        Recalcutate the norm of the weights matrix to be used later for regularization.
         Calculate the forward value
 
         :param input: [prevuis_layer_dim,1]
         :return: values of the non linear [this layer dim,1]
         """
+        self.weights_norm = np.linalg.norm(self.weights)
+        if self.regularization == REGULARIZATION_OPTIONS[0]:  # MSE
+            self.weights_norm = np.square(self.weights_norm)
 
         forward_mult = self.multiplication.forward(input, self.weights)
         forward_add = self.addition.forward(forward_mult, self.bias)
@@ -65,7 +69,10 @@ class Layer:
         backward_mult_x, backward_mult_w = self.multiplication.backward(backward_add)
         # TODO need to review this part
         self.bias -= self.learning_rate * grad_b
-        self.weights -= self.learning_rate * backward_mult_w
+        if self.regularization == REGULARIZATION_OPTIONS[1]:    # L2
+            self.weights -= self.learning_rate * (backward_mult_w + 2 * self.weight_decay * self.weights)
+        else:                                                   # L1
+            self.weights -= self.learning_rate * (backward_mult_w + self.weight_decay * self.weights)
         return backward_mult_x
 
     def _initialize_weights(self):

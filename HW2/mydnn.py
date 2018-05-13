@@ -3,6 +3,8 @@ import numpy as np
 from Macros import *
 from Layer import Layer
 from Nodes import node_factory
+from Nodes import MSE
+from Nodes import Entropy
 
 
 ######################
@@ -91,6 +93,7 @@ class MyDNN:
 
             print(f'Epoch {episode} / {epochs + 1} - {t_current} seconds - loss: {loss} -'
                   f' acc: {acc} - val_loss: {val_loss} - val_acc: {val_acc}')
+
             history.append(dict(
                 episode=episode,
                 time=t_current,
@@ -127,7 +130,6 @@ class MyDNN:
         """
 
         shuffled_data, shuffled_labels = self._shuffle(Data, Label)
-
         shuffled_data = shuffled_data.T
         shuffled_labels = shuffled_labels.T
 
@@ -138,20 +140,25 @@ class MyDNN:
 
         for batch in range(0, sample_num, batch_size):
 
-            # y_hat is a matrix where the rows are the output of the layer of an expesific sample
-
+            # y_hat is a t x b matrix where t is the output dimension of the layer
+            # before the classifier and b is the batch size
             y_hat = self._forward(shuffled_data[:, batch: batch_size + batch])
 
-            # self.loss.forward(y_hat, shuffled_labels[:, batch: batch_size + batch])
-            # if np.argmax(y_hat) == np.argmax(Label[:, batch: batch_size + batch]):
-            #     acc += 1
-            # current += 1
+            weights_norm_sum = 0
+            for layer in self.layers:
+                weights_norm_sum += layer.weights_norm
+
+            self.loss.forward(y_hat, shuffled_labels[:, batch: batch_size + batch])
+
+            if np.argmax(y_hat) == np.argmax(Label[:, batch: batch_size + batch]):
+                acc += 1
+
             # loss.append(self.loss.get_loss())
             # self._backward(self.loss.backward())
             # if current == 49_999:
             #     break
 
-        # return sum(loss), (acc / sumple_num)
+        return sum(loss), (acc / sample_num)
         return y_hat
 
     def _test(self, Data, Label):
@@ -160,6 +167,7 @@ class MyDNN:
         sumple_num = Data.shape[0]
         for sample in range(sumple_num - 2):
             y_hat = self._forward(Data[sample])
+            s=1
             self.loss.forward(y_hat, Label[sample])
             if np.argmax(y_hat) == np.argmax(Label[sample]):
                 acc += 1
@@ -173,15 +181,24 @@ class MyDNN:
         :param batch_inputs: A matrix of dimensions m x b, where m is the
         number of features, and b is the batch size (represents a particular
         subset of our initial samples).
-        :return:
+        :return: A matrix of dimensions t x b, where t is the dimension of the output
+        before the classifier
         """
 
-        for layer in self.layers:
-            current_input = layer.forward(current_input)
+        current_output = batch_inputs
 
-        return current_input
+        for layer in self.layers:
+            current_input = current_output
+            current_output = layer.forward(current_input)
+
+        return current_output
 
     def _backward(self, gradiant):
+        """
+
+        :param gradiant:
+        :return:
+        """
         current_gradiant = gradiant
 
         for index in range(len(self.layers) - 1, -1, -1):
