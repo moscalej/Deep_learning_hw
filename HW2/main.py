@@ -20,8 +20,8 @@ def generate_layer(input_dims, output_dims, non_linearity, regularization, learn
 
 
 if __name__ == "__main__":
-    data_url = "http://deeplearning.net/data/mnist/mnist.pkl.gz"
-    urllib.request.urlretrieve(data_url, "mnist.pkl.gz")
+    # data_url = "http://deeplearning.net/data/mnist/mnist.pkl.gz"
+    # urllib.request.urlretrieve(data_url, "mnist.pkl.gz")
     with gzip.open('mnist.pkl.gz', 'rb') as f:
         train_set, valid_set, test_set = pickle.load(f, encoding='latin1')
 
@@ -35,4 +35,4 @@ if __name__ == "__main__":
     layers.append(generate_layer(50, 10, "softmax", "l2", 0.2))
 
     net = MyDNN(layers, "MSE")  # MSE
-    net.fit(training_samples, train_set[1], 300, 1, 0.02, validation_samples, valid_set[1])
+    net.fit(training_samples, train_set[1], 300, 4, 0.02, validation_samples, valid_set[1])

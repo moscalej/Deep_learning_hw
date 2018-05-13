@@ -31,7 +31,7 @@ class Node:
         pass
 
 
-class Gate():
+class Gate:
     """
     This class is for the nodes from a Two input to a single output
     this can not be a layer given that a layer has also Weights and Bias
@@ -57,7 +57,6 @@ class Relu(Node):
         self.func_forward = lambda x: np.maximum(x, 0)
 
     def backward(self, back_received):
-        # todo need to re write to work with batch
         self.value[self.value >= 0] = 1
         self.value[self.value < 0] = 0
         return self.value * back_received

@@ -43,13 +43,12 @@ class Layer:
         self.bias = self._initialize_biases()
 
     def forward(self, input):
-        '''
+        """
         Calculate the forward value
 
         :param input: [prevuis_layer_dim,1]
         :return: values of the non linear [this layer dim,1]
-        '''
-
+        """
 
         forward_mult = self.multiplication.forward(input, self.weights)
         forward_add = self.addition.forward(forward_mult, self.bias)
@@ -64,6 +63,7 @@ class Layer:
         backward_non_linearity = self.non_linearity.backward(gradiant_in)
         backward_add, grad_b = self.addition.backward(backward_non_linearity)
         backward_mult_x, backward_mult_w = self.multiplication.backward(backward_add)
+        # TODO need to review this part
         self.bias -= self.learning_rate * grad_b
         self.weights -= self.learning_rate * backward_mult_w
         return backward_mult_x
@@ -71,7 +71,7 @@ class Layer:
     def _initialize_weights(self):
         """
         :return: a vector of dimensions w X n where w is the size of this layer's output
-        and n is the size of this layers's input
+        and n is the size of this layer's input
         """
         val = 1 / (math.sqrt(self.input))
         return np.random.uniform(-val, val, [self.output, self.input])

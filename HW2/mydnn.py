@@ -1,15 +1,13 @@
-######################
-# CORE DNN CLASS ###
-######################
-
-
 import time
 import numpy as np
-import math
 from Macros import *
 from Layer import Layer
 from Nodes import node_factory
 
+
+######################
+# CORE DNN CLASS ###
+######################
 
 class MyDNN:
     def __init__(self, architecture, loss, weight_decay=0.):
@@ -23,13 +21,14 @@ class MyDNN:
 
         assert isinstance(architecture, list)
         assert loss in LOSS_OPTIONS, (loss + " is not a valid loss function")
-        # assert isinstance(weight_decay, float), \
-        #     ("weight_decay should be a float, not a " + str(type(weight_decay)))
+        assert isinstance(weight_decay, float), \
+            ("weight_decay should be a float, not a " + str(type(weight_decay)))
 
         # Attribute setting
 
         self.layers = []
 
+        # Generate a layer object for each layer dictionary in the architecture list
         for layer in architecture:
             layer_input = layer[INPUT]
             layer_output = layer[OUTPUT]
@@ -75,13 +74,19 @@ class MyDNN:
         """
 
         history = []
+
         Data = x_train.copy()
         sumple_num = Data.shape[0]
         Label = self._one_hot(y_train.copy())
+
         time.clock()
+
         t_current = 0
+
         for episode in range(1, epochs + 1):
+
             loss, acc = self._train_epochs(Data, Label, sumple_num, batch_size)
+
             val_loss, val_acc = self._test(Data, Label)
 
             print(f'Epoch {episode} / {epochs + 1} - {t_current} seconds - loss: {loss} -'
@@ -102,28 +107,52 @@ class MyDNN:
 
         return
 
-    def _train_epochs(self, Data, Label, sumple_num, batch_size):
+    def _train_epochs(self, Data, Label, sample_num, batch_size):
+        """
 
-        data_e, label_e = self._shuffle(Data, Label)
-        current = 0
+        :param Data: An n x m matrix where n represents the number of samples and
+        m represents the number of features per sample.
+        :param Label: An n x k matrix where n represents the number of samples, and
+        k represents the number dimension of the output of the network (i.e., the
+        number of possible classifications we can have for a given input).
+        :param sample_num: An integer. The number of samples we are currently working with.
+        Going by the notation above, this is the number n.
+        :param batch_size: the size of any particular batch (perhaps except for the last one).
+        An integer
+        :return: A tuple consisting of
+
+                                    (Loss, Accuracy)
+
+        Both Loss and Accuracy are numbers.
+        """
+
+        shuffled_data, shuffled_labels = self._shuffle(Data, Label)
+
+        shuffled_data = shuffled_data.T
+        shuffled_labels = shuffled_labels.T
+
         acc = 0.
         loss = []
-        print(data_e.shape, label_e.shape, sumple_num)
-        for batch in range(50_000):
 
-            # for sample in range(batch):
+        print(shuffled_data.shape, shuffled_labels.shape, sample_num)
 
-            y_hat = self._forward(data_e[current])
-            self.loss.forward(y_hat, label_e[current])
-            if np.argmax(y_hat) == np.argmax(Label[current]):
-                acc += 1
-            current += 1
-            loss.append(self.loss.get_loss())
-            self._backward(self.loss.backward())
-            if current == 49_999:
-                break
+        for batch in range(0, sample_num, batch_size):
 
-        return sum(loss), (acc / sumple_num)
+            # y_hat is a matrix where the rows are the output of the layer of an expesific sample
+
+            y_hat = self._forward(shuffled_data[:, batch: batch_size + batch])
+
+            # self.loss.forward(y_hat, shuffled_labels[:, batch: batch_size + batch])
+            # if np.argmax(y_hat) == np.argmax(Label[:, batch: batch_size + batch]):
+            #     acc += 1
+            # current += 1
+            # loss.append(self.loss.get_loss())
+            # self._backward(self.loss.backward())
+            # if current == 49_999:
+            #     break
+
+        # return sum(loss), (acc / sumple_num)
+        return y_hat
 
     def _test(self, Data, Label):
         acc = 0.
@@ -138,26 +167,55 @@ class MyDNN:
         loss = self.loss.get_loss()
         return loss, acc
 
-    def _forward(self, in_put):
-        current_input = in_put.reshape([len(in_put), 1])  # something
+    def _forward(self, batch_inputs):
+        """
+
+        :param batch_inputs: A matrix of dimensions m x b, where m is the
+        number of features, and b is the batch size (represents a particular
+        subset of our initial samples).
+        :return:
+        """
+
         for layer in self.layers:
             current_input = layer.forward(current_input)
 
         return current_input
 
-    def _backward(self, gradiand):
-        current_gradiant = gradiand
+    def _backward(self, gradiant):
+        current_gradiant = gradiant
 
         for index in range(len(self.layers) - 1, -1, -1):
             current_gradiant = self.layers[index].backward(current_gradiant)
 
     def _one_hot(self, labels):
+        """
+
+        :param labels: An array of integers (labels).
+        The length of this array is the number of samples.
+        :return:
+        """
+
         range = np.max(labels) - np.min(labels) + 1
         Labels_one = np.zeros([len(labels), range])
         Labels_one[np.arange(len(labels)), labels.reshape(-1)] = 1
         return Labels_one
 
     def _shuffle(self, Data, Labels):
+        """
+
+        :param Data: A matrix of size n x m, where n is the number of samples,
+        and m is the number of features per sample.
+        :param Labels: a vector of length n, where n is the number of samples.
+        :return: A tuple composed of the following:
+
+                                    (A, B)
+
+        Where A is a shuffled copy of the Data matrix (i.e., rows are shuffled)
+
+        and
+
+        Where B is a shuffled copy of the Labels vector (i.e., rows are shuffled)
+        """
         index_s = np.arange(Data.shape[0])
         np.random.shuffle(index_s)
         return Data.copy()[index_s, :], Labels.copy()[index_s, :]
