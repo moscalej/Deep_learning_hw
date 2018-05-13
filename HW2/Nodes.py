@@ -57,6 +57,7 @@ class Relu(Node):
         self.func_forward = lambda x: np.maximum(x, 0)
 
     def backward(self, back_received):
+        # todo need to re write to work with batch
         self.value[self.value >= 0] = 1
         self.value[self.value < 0] = 0
         return self.value * back_received
@@ -86,9 +87,10 @@ class NoneNode(Node):
 class Multiplication(Gate):  # its for a matrix and a vector
     def __init__(self):
         super().__init__()
-        self.func_forward = lambda x, W: W @ x
+        self.func_forward = lambda X, W: W @ X
 
     def backward(self, back_received):
+        # todo need to re do for batch
         gx = self.value[1].T @ back_received
         gw = back_received @ self.value[0].T
         return gx, gw
@@ -111,7 +113,7 @@ class SoftMax(Sigmoid):
         self.func_backward = lambda x: self.func_forward(x) * (1 - self.func_forward(x))
 
 
-class Loss:
+class Loss: # Todo re think for batch and return row vector
     def __init__(self):
         self.imput_size_inv = 1
         self.error = None
