@@ -4,7 +4,7 @@ import Macros
 from abc import abstractmethod
 
 
-# todo strong check dimentions
+
 
 class Node:
     """
@@ -83,7 +83,7 @@ class NoneNode(Node):
         return back_received
 
 
-class Multiplication(Gate):  # its for a matrix and a vector
+class Multiplication(Gate):
     def __init__(self):
         super().__init__()
         self.func_forward = lambda X, W: W @ X
@@ -112,15 +112,12 @@ class SoftMax(Sigmoid):
         self.func_backward = lambda x: self.func_forward(x) * (1 - self.func_forward(x))
 
 
-class Loss: # Todo re think for batch and return row vector
-    def __init__(self):
-        self.input_size_inv = 1
+class Loss:
+    def __init__(self, num_bacht):
+        self.input_size_inv = 1 / num_bacht
         self.error = None
         self.gradiant = None
         self.value = None
-
-    def set_input_size(self, m):
-        self.input_size_inv = 1 / m
 
     @abstractmethod
     def forward(self, y_hat, y):
@@ -134,14 +131,10 @@ class Loss: # Todo re think for batch and return row vector
 
 
 class MSE(Loss):
-    def __init__(self):
+    def __init__(self, num_bacht):
+        super().__init__(num_bacht=num_bacht)
 
-        super().__init__()
-
-        # a row vector of dimensions 1 x d where d is the number of possible
-        # classifications we have for a particular sample.
-
-        self.norm = lambda x, y: np.sum(np.square((x - y)), axis=0)
+        self.norm = lambda x, y: np.sum(np.square(x - y))
 
     def forward(self, y_hat, y):
         sq_norm = self.norm(y_hat, y)
@@ -150,15 +143,13 @@ class MSE(Loss):
 
 
 class Entropy(Loss):
-    def __init__(self, sum_of_weight_norms):
-        super().__init__()
+    def __init__(self, num_bacht):
+        super().__init__(num_bacht=num_bacht)
         self.func = lambda y, y_hat: - np.sum(y * np.log(y_hat))
 
     def forward(self, y_hat, y):
-        y_hat = y_hat.reshape([len(y_hat), 1])
-        y = y.reshape([len(y), 1])
         self.error = self.func(y, y_hat) * self.input_size_inv
-        self.gradiand = (y_hat - y) * self.input_size_inv
+        self.gradiant = (y - y_hat) * self.input_size_inv
 
 
 class Normal_l1:  # Todo need to check this function
@@ -187,24 +178,24 @@ def node_factory(node_name):
         relu=Relu,
         sigmoid=Sigmoid,
         softmax=SoftMax,
-        MSE=MSE,
-        Entropy=Entropy,
-
         l1=Normal_l1
     )
     return nodes[node_name]()
 
 if __name__ == '__main__':
     np.random.seed(4)
-    x = np.array([1, 2, 3, 4])
-    w = np.random.rand(20).reshape([5, 4])
-    b = np.random.rand(5)
+    x = np.random.randn(16).reshape([4, 4])
+    w = np.random.randn(20).reshape([5, 4])
+    b = np.random.randn(5).reshape([5, 1])
     m = Multiplication()
     add = Add_node()
     sig = Sigmoid()
-    total = sig.forward(add.forward(m.forward(x, w), b))
-    ones = np.array([1, 1, 1, 1, 1])
-    y = np.random.randint(0, 4, 5)
-    y_hat = np.random.randint(0, 4, 5)
-    # l = Loos(5)
-    # l.forward(y, y_hat)
+    soft = SoftMax()
+    relu = Relu()
+    mse = MSE(4)
+    ent = Entropy(4)
+    total = soft.forward(add.forward(m.forward(x, w), b))
+    ent.forward(total, np.ones([5, 4]))
+    out = soft.backward(ent.gradiand)
+    b_d, a = add.backward(out)
+    xm, wm = m.backward(b_d)
