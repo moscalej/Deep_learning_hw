@@ -134,11 +134,9 @@ class MyDNN:
         shuffled_labels = shuffled_labels.T
 
         acc = []
-        error =[]
+        error = []
         for batch in range(0, sample_num, batch_size):
 
-            # y_hat is a t x b matrix where t is the output dimension of the layer
-            # before the classifier and b is the batch size
             y_hat = self._forward(shuffled_data[:, batch: batch_size + batch])
 
             weights_norm_sum = 0
@@ -149,7 +147,7 @@ class MyDNN:
 
             self._backward(self.loss.gradiant)
             error.append(self.loss.error + (weights_norm_sum * self.weight_decay))
-            diff = sum(np.argmax(y_hat, axis=0) == np.argmax(Label[:, batch: batch_size + batch], axis=0))
+            diff = sum(np.argmax(y_hat, axis=0) == np.argmax(shuffled_labels[:, batch: batch_size + batch], axis=0))
             acc.append(diff / y_hat.shape[1])
 
         return np.mean(acc), np.mean(error)
