@@ -42,7 +42,10 @@ class Layer:
         self.addition = node_factory('add')
         self.weights = self._initialize_weights()
         self.bias = self._initialize_biases()
-        self.weights_norm = np.linalg.norm(self.weights)
+        self.weights_norm = np.sum(np.square(self.weights))
+        if self.regularization == REGULARIZATION_OPTIONS[1]:  # L2
+            self.weights_norm = np.square(self.weights_norm)
+
 
     def forward(self, input):
         """

@@ -1,9 +1,6 @@
 
 import numpy as np
-import Macros
 from abc import abstractmethod
-
-
 
 
 class Node:
@@ -112,8 +109,8 @@ class SoftMax(Sigmoid):
 
 
 class Loss:
-    def __init__(self, num_bacht):
-        self.input_size_inv = 1 / num_bacht
+    def __init__(self, num_bach):
+        self.input_size_inv = 1 / num_bach
         self.error = None
         self.gradiant = None
         self.value = None
@@ -130,8 +127,8 @@ class Loss:
 
 
 class MSE(Loss):
-    def __init__(self, num_bacht):
-        super().__init__(num_bacht=num_bacht)
+    def __init__(self, num_bach):
+        super().__init__(num_bach=num_bach)
 
         self.norm = lambda x, y: np.sum(np.square(x - y))
 
@@ -142,32 +139,13 @@ class MSE(Loss):
 
 
 class Entropy(Loss):
-    def __init__(self, num_bacht):
-        super().__init__(num_bacht=num_bacht)
+    def __init__(self, num_bach):
+        super().__init__(num_bach=num_bach)
         self.func = lambda y, y_hat: - np.sum(y * np.log(y_hat))
 
     def forward(self, y_hat, y):
         self.error = self.func(y, y_hat) * self.input_size_inv
         self.gradiant = (y - y_hat) * self.input_size_inv
-
-
-class Normal_l1:  # Todo need to check this function
-    def __init__(self, imput_size):
-        self.imput_size_inv = 1 / imput_size
-        self.error = []
-        self.gradiand = []
-        self.value = None
-        self.norm = lambda x, y: np.sum(np.abs(x - y))
-
-    def forward(self, y, y_hat):
-        sq_norm = self.norm(y, y_hat)
-        self.error.append(sq_norm * self.imput_size_inv)
-        self.gradiand.append(np.sqrt(sq_norm) * self.imput_size_inv)
-
-    def backward(self):
-        mean_gradiand = np.mean(self.gradiand)
-        self.gradiand = []
-        return mean_gradiand
 
 
 def node_factory(node_name):
@@ -177,10 +155,10 @@ def node_factory(node_name):
         relu=Relu,
         sigmoid=Sigmoid,
         softmax=SoftMax,
-        l1=Normal_l1,
         none=NoneNode
     )
     return nodes[node_name]()
+
 
 if __name__ == '__main__':
     np.random.seed(4)
@@ -196,6 +174,6 @@ if __name__ == '__main__':
     ent = Entropy(4)
     total = soft.forward(add.forward(m.forward(x, w), b))
     ent.forward(total, np.ones([5, 4]))
-    out = soft.backward(ent.gradiand)
+    out = soft.backward(ent.gradiant)
     b_d, a = add.backward(out)
     xm, wm = m.backward(b_d)

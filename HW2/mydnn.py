@@ -133,11 +133,6 @@ class MyDNN:
         shuffled_data = shuffled_data.T
         shuffled_labels = shuffled_labels.T
 
-        acc = 0.
-        loss = []
-
-        print(shuffled_data.shape, shuffled_labels.shape, sample_num)
-
         for batch in range(0, sample_num, batch_size):
 
             # y_hat is a t x b matrix where t is the output dimension of the layer
@@ -150,28 +145,21 @@ class MyDNN:
 
             self.loss.forward(y_hat, shuffled_labels[:, batch: batch_size + batch])
 
-            if np.argmax(y_hat) == np.argmax(Label[:, batch: batch_size + batch]):
-                acc += 1
+            self._backward(self.loss.gradiant)
+            error = self.loss.error + (weights_norm_sum * self.weight_decay)
 
-            # loss.append(self.loss.get_loss())
-            # self._backward(self.loss.backward())
-            # if current == 49_999:
-            #     break
+            acc = sum(np.argmax(y_hat,axis=0) == np.argmax(Label[:, batch: batch_size + batch],axis=0)) / y_hat.shape[1]
 
-        return sum(loss), (acc / sample_num)
-        return y_hat
+
+        return
+
 
     def _test(self, Data, Label):
-        acc = 0.
-        loss = []
-        sumple_num = Data.shape[0]
-        for sample in range(sumple_num - 2):
-            y_hat = self._forward(Data[sample])
-            s=1
-            self.loss.forward(y_hat, Label[sample])
-            if np.argmax(y_hat) == np.argmax(Label[sample]):
-                acc += 1
-        acc = acc / sumple_num
+        Data = Data.T
+        Label = Label.T
+        y_hat = self._forward(Data)
+        self.loss.forward(y_hat, Label)
+        acc = sum(np.argmax(y_hat) == np.argmax(Label))
         loss = self.loss.get_loss()
         return loss, acc
 
