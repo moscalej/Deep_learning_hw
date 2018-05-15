@@ -145,7 +145,7 @@ class MyDNN:
             for layer in self.layers:
                 weights_norm_sum += layer.weights_norm
 
-            self.loss.forward(y_hat, shuffled_labels[:, batch: batch_size + batch])
+            self.loss.forward(y_hat, shuffled_labels[:, batch: batch_size + batch], sample_num)
 
             self._backward(self.loss.gradiant)
             error.append(self.loss.error + (weights_norm_sum * self.weight_decay))
@@ -161,7 +161,7 @@ class MyDNN:
         weights_norm_sum = 0
         for layer in self.layers:
             weights_norm_sum += layer.weights_norm
-        self.loss.forward(y_hat, Label)
+        self.loss.forward(y_hat, Label, Data.shape[1])
         acc = sum(np.argmax(y_hat, axis=0) == np.argmax(Label, axis=0))
         loss = self.loss.get_loss() + (weights_norm_sum * self.weight_decay)
         return loss, acc

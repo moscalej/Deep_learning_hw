@@ -109,14 +109,14 @@ class SoftMax(Sigmoid):
 
 
 class Loss:
-    def __init__(self, num_bach):
-        self.input_size_inv = 1 / num_bach
+    def __init__(self):
+        self.input_size_inv = None
         self.error = None
         self.gradiant = None
         self.value = None
 
     @abstractmethod
-    def forward(self, y_hat, y):
+    def forward(self, y_hat, y,num_samples):
         pass
 
     def backward(self):
@@ -127,23 +127,25 @@ class Loss:
 
 
 class MSE(Loss):
-    def __init__(self, num_bach):
-        super().__init__(num_bach=num_bach)
+    def __init__(self):
+        super().__init__()
 
         self.norm = lambda x, y: np.sum(np.square(x - y))
 
-    def forward(self, y_hat, y):
+    def forward(self, y_hat, y, num_samples):
+        self.input_size_inv = 1 / num_samples
         sq_norm = self.norm(y_hat, y)
         self.error = (0.5 * sq_norm * self.input_size_inv)
         self.gradiant = np.sqrt(sq_norm) * self.input_size_inv
 
 
 class Entropy(Loss):
-    def __init__(self, num_bach):
-        super().__init__(num_bach=num_bach)
+    def __init__(self):
+        super().__init__()
         self.func = lambda y, y_hat: - np.sum(y * np.log(y_hat))
 
-    def forward(self, y_hat, y):
+    def forward(self, y_hat, y, num_samples):
+        self.input_size_inv = 1/num_samples
         self.error = self.func(y, y_hat) * self.input_size_inv
         self.gradiant = (y - y_hat) * self.input_size_inv
 
@@ -155,9 +157,12 @@ def node_factory(node_name):
         relu=Relu,
         sigmoid=Sigmoid,
         softmax=SoftMax,
-        none=NoneNode
+        none=NoneNode,
+        MSE=MSE,
+        Entropy= Entropy,
     )
     return nodes[node_name]()
+
 
 
 if __name__ == '__main__':
@@ -170,8 +175,8 @@ if __name__ == '__main__':
     sig = Sigmoid()
     soft = SoftMax()
     relu = Relu()
-    mse = MSE(4)
-    ent = Entropy(4)
+    mse = MSE()
+    ent = Entropy()
     total = soft.forward(add.forward(m.forward(x, w), b))
     ent.forward(total, np.ones([5, 4]))
     out = soft.backward(ent.gradiant)
