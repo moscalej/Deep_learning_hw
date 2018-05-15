@@ -1,6 +1,5 @@
 import pickle
 import gzip
-import numpy as np
 import urllib.request
 from sklearn.preprocessing import scale
 from mydnn import MyDNN
@@ -17,8 +16,6 @@ def generate_layer(input_dims, output_dims, non_linearity, regularization, learn
     }
 
 
-
-
 if __name__ == "__main__":
     # data_url = "http://deeplearning.net/data/mnist/mnist.pkl.gz"
     # urllib.request.urlretrieve(data_url, "mnist.pkl.gz")
@@ -28,6 +25,9 @@ if __name__ == "__main__":
     training_samples = scale(train_set[0], axis=0, with_std=False)
     validation_samples = scale(valid_set[0], axis=0, with_std=False)
 
+    training_classifications = train_set[1]
+    validation_classifications = valid_set[1]
+
     num_samples, num_pixels = training_samples.shape
 
     layers = [generate_layer(num_pixels, 100, "relu", "l2", 0.4)]
@@ -35,4 +35,4 @@ if __name__ == "__main__":
     layers.append(generate_layer(50, 10, "softmax", "l2", 0.4))
 
     net = MyDNN(layers, "cross-entropy")  # MSE
-    net.fit(training_samples, train_set[1], 100, 512, 0.2, validation_samples, valid_set[1])
+    net.fit(training_samples, training_classifications, 100, 512, 0.2, validation_samples, validation_classifications)

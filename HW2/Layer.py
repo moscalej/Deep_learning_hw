@@ -1,14 +1,12 @@
-
-#################
-#  Layer class  #
-#################
-
-
 from Macros import *
 from Nodes import node_factory
 import math
 import numpy as np
 
+
+#################
+#  Layer class  #
+#################
 
 class Layer:
 
@@ -45,7 +43,6 @@ class Layer:
         self.weights_norm = np.sum(np.square(self.weights))
         if self.regularization == REGULARIZATION_OPTIONS[1]:  # L2
             self.weights_norm = np.square(self.weights_norm)
-
 
     def forward(self, input):
         """

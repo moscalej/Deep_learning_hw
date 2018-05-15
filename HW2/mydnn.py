@@ -78,24 +78,24 @@ class MyDNN:
         history = []
 
         Data = x_train.copy()
-        sumple_num = Data.shape[0]
+        sample_num = Data.shape[0]
         Label = self._one_hot(y_train.copy())
 
         time.clock()
 
         t_current = 0
 
-        for episode in range(1, epochs + 1):
+        for iteration in range(1, epochs + 1):
 
-            loss, acc = self._train_epochs(Data, Label, sumple_num, batch_size)
+            loss, acc = self._train_epochs(Data, Label, sample_num, batch_size)
 
             val_loss, val_acc = self._test(Data, Label)
 
-            print(f'Epoch {episode} / {epochs + 1} - {t_current} seconds - loss: {loss} -'
+            print(f'Epoch {iteration} / {epochs + 1} - {t_current} seconds - loss: {loss} -'
                   f' acc: {acc} - val_loss: {val_loss} - val_acc: {val_acc}')
 
             history.append(dict(
-                episode=episode,
+                iteration=iteration,
                 time=t_current,
                 loss=loss,
                 acc=acc,
@@ -106,9 +106,19 @@ class MyDNN:
 
         return history
 
-    def prdict(self, data):
+    def predict(self, data):
+        """
 
-        return
+        :param data: An n x m matrix where n is the number of samples
+        and m is the number of features,
+        :return: An n x b matrix where n is the number of samples,
+        and b is the number of possible classifications for an entry.
+        Note that all entries within a given row are 0's except for a single 1.
+        This 1 entry represents the correct classification of that sample.
+        """
+
+        # TODO: implement this
+        raise NotImplemented
 
     def _train_epochs(self, Data, Label, sample_num, batch_size):
         """
@@ -135,17 +145,26 @@ class MyDNN:
 
         acc = []
         error = []
+
         for batch in range(0, sample_num, batch_size):
 
+            # perform a forward pass only on the samples in this batch
             y_hat = self._forward(shuffled_data[:, batch: batch_size + batch])
 
+            # sum up the norms of the weights. Used for regularization.
             weights_norm_sum = 0
             for layer in self.layers:
                 weights_norm_sum += layer.weights_norm
 
+            # calculate the loss of the samples in this batch
             self.loss.forward(y_hat, shuffled_labels[:, batch: batch_size + batch], sample_num)
 
+            # Begin back prop from the loss layer.
+            # Update the weights and biases of each layer.
             self._backward(self.loss.gradiant)
+
+            # Keep track of the error
+            # TODO: make sure this part works properly
             error.append(self.loss.error + (weights_norm_sum * self.weight_decay))
             diff = sum(np.argmax(y_hat, axis=0) == np.argmax(shuffled_labels[:, batch: batch_size + batch], axis=0))
             acc.append(diff / y_hat.shape[1])
@@ -153,6 +172,16 @@ class MyDNN:
         return np.mean(acc), np.mean(error)
 
     def _test(self, Data, Label):
+        """
+
+        :param Data: An n x m matrix where n represents the number of samples and
+        m represents the number of features per sample.
+        :param Label: An n x k matrix where n represents the number of samples, and
+        k represents the number dimension of the output of the network (i.e., the
+        number of possible classifications we can have for a given input).
+        :return: the loss and accuracy (both floats) for a given run on a data-set.
+        """
+
         Data = Data.T
         Label = Label.T
         y_hat = self._forward(Data)
@@ -160,7 +189,10 @@ class MyDNN:
         for layer in self.layers:
             weights_norm_sum += layer.weights_norm
         self.loss.forward(y_hat, Label, Data.shape[1])
+
+        # TODO: Make sure that the below is correct
         acc = sum(np.argmax(y_hat, axis=0) == np.argmax(Label, axis=0))
+
         loss = self.loss.get_loss() + (weights_norm_sum * self.weight_decay)
         return loss, acc
 
@@ -185,8 +217,9 @@ class MyDNN:
     def _backward(self, gradiant):
         """
 
-        :param gradiant:
-        :return:
+        :param gradiant: the An input gradient from which we should perform
+        backwards propogation into earlier layers in the network.
+        :return: None
         """
         current_gradiant = gradiant
 
@@ -198,7 +231,8 @@ class MyDNN:
 
         :param labels: An array of integers (labels).
         The length of this array is the number of samples.
-        :return:
+        :return: An n x k matrix where n is the number of samples
+        and k is the number of possible classifications of this network
         """
 
         range = np.max(labels) - np.min(labels) + 1
