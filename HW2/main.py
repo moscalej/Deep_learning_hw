@@ -30,9 +30,9 @@ if __name__ == "__main__":
 
     num_samples, num_pixels = training_samples.shape
 
-    layers = [generate_layer(num_pixels, 100, "relu", "l2", 0)]
-    layers.append(generate_layer(100, 50, "relu", "l2", 0))
-    layers.append(generate_layer(50, 10, "softmax", "l2", 0))
+    layers = [generate_layer(num_pixels, 100, "relu", "l2", 0.4)]
+    layers.append(generate_layer(100, 50, "relu", "l2", 0.4))
+    layers.append(generate_layer(50, 10, "softmax", "l2", 0.4))
 
     net = MyDNN(layers, "cross-entropy")  # MSE
-    net.fit(training_samples, train_set[1], 300, 512, 0.2, validation_samples, valid_set[1])
+    net.fit(training_samples, train_set[1], 100, 512, 0.2, validation_samples, valid_set[1])
