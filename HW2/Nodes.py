@@ -159,8 +159,8 @@ def node_factory(node_name):
         softmax=SoftMax,
         none=NoneNode,
         MSE=MSE,
-        Entropy= Entropy,
     )
+    nodes['cross-entropy'] = Entropy
     return nodes[node_name]()
 
 
