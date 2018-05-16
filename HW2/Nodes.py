@@ -112,7 +112,7 @@ class Loss:
     def __init__(self):
         self.input_size_inv = None
         self.error = None
-        self.gradiant = None
+        self.gradient = None
         self.value = None
 
     @abstractmethod
@@ -120,7 +120,7 @@ class Loss:
         pass
 
     def backward(self):
-        return self.gradiant
+        return self.gradient
 
     def get_loss(self):
         return self.error
@@ -136,7 +136,7 @@ class MSE(Loss):
         self.input_size_inv = 1 / num_samples
         sq_norm = self.norm(y_hat, y)
         self.error = (0.5 * sq_norm * self.input_size_inv)
-        self.gradiant = np.sqrt(sq_norm) * self.input_size_inv
+        self.gradient = (y_hat - y) * self.input_size_inv
 
 
 class Entropy(Loss):
