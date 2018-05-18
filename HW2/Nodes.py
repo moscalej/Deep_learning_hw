@@ -176,12 +176,18 @@ def node_factory(node_name):
     return nodes[node_name]()
 
 
-
 if __name__ == '__main__':
+
+    # We create a 4x2 matrix where there are 4 samples and 2 features
+    # First layer has 2 output dimensions and softmax loss function
+
     np.random.seed(4)
-    x = np.random.randn(12).reshape([3, 4])
-    w = np.random.randn(9).reshape([3, 3])
-    b = np.random.randn(3).reshape([3, 1])
+    x = np.random.randn(8).reshape([4, 2])
+    w = np.random.uniform(-0.5, 0.5, [2, 4])
+    b = np.zeros([2, 1])
+    labels = np.array([[0, 1],
+                       [1, 0]])
+
     m = Multiplication()
     add = Add_node()
     sig = Sigmoid()
@@ -189,9 +195,13 @@ if __name__ == '__main__':
     relu = Relu()
     mse = MSE()
     ent = Entropy()
-    labels = np.eye(3, 4)
-    total = soft.forward(add.forward(m.forward(x, w), b))
-    ent.forward(total, labels, 3)
-    out = soft.backward(ent.gradiant)
-    b_d, a = add.backward(out)
-    xm, wm = m.backward(b_d)
+
+    after_mult = m.forward(x, w)
+    after_add = add.forward(after_mult, b)
+    total = soft.forward(after_add)
+    print("\nSample 1 prediction: " + str(total.T[0]) + "\nSample 2 prediction: " + str(total.T[1]) + "\n")
+    ent.forward(total, labels, 2)
+
+    # out = soft.backward(ent.gradiant)
+    # b_d, a = add.backward(out)
+    # xm, wm = m.backward(b_d)
