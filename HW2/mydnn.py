@@ -86,8 +86,7 @@ class MyDNN:
         t_current = 0
 
         for iteration in range(1, epochs + 1):
-
-            loss, acc = self._train_epochs(Data, Label, sample_num, batch_size)
+            acc, loss = self._train_epochs(Data, Label, sample_num, batch_size)
 
             val_loss, val_acc = self._test(Data, Label)
 
