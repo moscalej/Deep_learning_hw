@@ -101,7 +101,6 @@ class Add_node(Gate):
 
 
 class SoftMax(Node):
-    # Todo solve the softmax backward prog
 
     def __init__(self):
         super().__init__()
@@ -124,7 +123,7 @@ class Loss:
         self.input_size_inv = None
         self.error = None
         self.gradient = None
-        self.value = None  # Todo delete this if not need it
+        self.value = None
 
     @abstractmethod
     def forward(self, y_hat, y,num_samples):
@@ -140,7 +139,6 @@ class Loss:
 class MSE(Loss):
     def __init__(self):
         super().__init__()
-
         self.norm = lambda x, y: np.sum(np.square(x - y))
 
     def forward(self, y_hat, y, num_samples):

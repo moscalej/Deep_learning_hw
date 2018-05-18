@@ -37,14 +37,13 @@ class MyDNN:
             non_linearity = layer[NON_LINEAR]
             regularization = layer[REGULARIZATION]
             learning_rate = layer[LEARNING_RATE]
-            new_layer = Layer(layer_input, layer_output, non_linearity, regularization, learning_rate)
+            new_layer = Layer(layer_input, layer_output, non_linearity, regularization, learning_rate, weight_decay)
             self.layers.append(new_layer)
 
         self.loss = node_factory(loss)
         self.weight_decay = weight_decay
 
     def fit(self, x_train, y_train, epochs, batch_size, learning_rate, x_val=None, y_val=None):
-        # TODO be sure that we pass the learning rate
         """
         Description:
 
@@ -82,21 +81,21 @@ class MyDNN:
         sample_num = Data.shape[0]
         Label = self._one_hot(y_train.copy())
 
-        time.clock()
-
-        t_current = 0
-
+        for layer in self.layers:
+            layer.learning_rate = learning_rate
+        tic = time.time()
         for iteration in range(1, epochs + 1):
             acc, loss = self._train_epochs(Data, Label, sample_num, batch_size)
 
             val_acc, val_loss = self._test(Data, Label)
 
-            print(f'Epoch {iteration} / {epochs + 1} - {t_current} seconds - loss: {loss} -'
+            toc = time.time()
+            print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} -'
                   f' acc: {acc} - val_loss: {val_loss} - val_acc: {val_acc}')
 
             history.append(dict(
                 iteration=iteration,
-                time=t_current,
+                time=round(toc - tic),
                 loss=loss,
                 acc=acc,
                 val_loss=val_loss,
@@ -194,7 +193,6 @@ class MyDNN:
             weights_norm_sum += layer.weights_norm
         self.loss.forward(y_hat, Label, Data.shape[1])
 
-        # TODO: Make sure that the below is correct
         acc = sum(np.argmax(y_hat, axis=0) == np.argmax(Label, axis=0))
         acc = acc / y_hat.shape[1]
 
