@@ -73,7 +73,8 @@ class Layer:
         if self.regularization == REGULARIZATION_OPTIONS[1]:    # L2
             self.weights -= self.learning_rate * (backward_mult_w + 2 * self.weight_decay * self.weights)
         else:                                                   # L1
-            self.weights -= self.learning_rate * (backward_mult_w + self.weight_decay * self.weights)
+            self.weights -= self.learning_rate * (
+                        backward_mult_w + self.weight_decay * self.weights_norm * self.weights)
         return backward_mult_x
 
     def _initialize_weights(self):
