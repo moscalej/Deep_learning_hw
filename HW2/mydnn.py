@@ -153,7 +153,7 @@ class MyDNN:
             # sum up the norms of the weights. Used for regularization.
             weights_norm_sum = 0
             for layer in self.layers:
-                weights_norm_sum += layer.weights_norm
+                weights_norm_sum += layer.weights_norm * layer.weight_decay
 
             # calculate the loss of the samples in this batch
             self.loss.forward(y_hat, shuffled_labels[:, batch: batch_size + batch], sample_num)
@@ -163,8 +163,8 @@ class MyDNN:
             self._backward(self.loss.gradiant)
 
             # Keep track of the error
-            # TODO: make sure this part works properly
-            error.append(self.loss.error + (weights_norm_sum * self.weight_decay))
+
+            error.append(self.loss.error + weights_norm_sum)
             diff = sum(np.argmax(y_hat, axis=0) == np.argmax(shuffled_labels[:, batch: batch_size + batch], axis=0))
             acc.append(diff / y_hat.shape[1])
 
