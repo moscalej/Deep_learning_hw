@@ -86,8 +86,8 @@ class Multiplication(Gate):
         self.func_forward = lambda X, W: W @ X
 
     def backward(self, back_received):
-        gx = self.value[1].T @ back_received
-        gw = back_received @ self.value[0].T
+        gx = self.value[1].T @ back_received  # W.T dot DL/Dmul
+        gw = back_received @ self.value[0].T  # DL/Dmul dot X.T
         return gx, gw
 
 
@@ -100,12 +100,17 @@ class Add_node(Gate):
         return back_received, back_received
 
 
-class SoftMax(Sigmoid):
+class SoftMax(Node):
+    # Todo solve the softmax backward prog
 
     def __init__(self):
         super().__init__()
         self.func_forward = lambda x: np.exp(x) / np.sum(np.exp(x), axis=0)
         self.func_backward = lambda x: self.func_forward(x) * (1 - self.func_forward(x))
+
+    def backward(self, back_received):
+        derivative_input = self.func_backward(self.value)
+        return derivative_input * back_received
 
 
 class Loss:
@@ -113,7 +118,7 @@ class Loss:
         self.input_size_inv = None
         self.error = None
         self.gradient = None
-        self.value = None
+        self.value = None  # Todo delete this if not need it
 
     @abstractmethod
     def forward(self, y_hat, y,num_samples):
@@ -147,7 +152,7 @@ class Entropy(Loss):
     def forward(self, y_hat, y, num_samples):
         self.input_size_inv = 1/num_samples
         self.error = self.func(y, y_hat) * self.input_size_inv
-        self.gradiant = (y - y_hat) * self.input_size_inv
+        self.gradiant = (y - y_hat) * self.input_size_inv  # Todo check if this is ok
 
 
 def node_factory(node_name):

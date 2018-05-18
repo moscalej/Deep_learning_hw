@@ -40,9 +40,7 @@ class Layer:
         self.addition = node_factory('add')
         self.weights = self._initialize_weights()
         self.bias = self._initialize_biases()
-        self.weights_norm = np.sum(np.square(self.weights))
-        if self.regularization == REGULARIZATION_OPTIONS[1]:  # L2
-            self.weights_norm = np.square(self.weights_norm)
+        self.weights_norm = None
 
     def forward(self, input):
         """
@@ -53,7 +51,7 @@ class Layer:
         :return: values of the non linear [this layer dim,1]
         """
         self.weights_norm = np.linalg.norm(self.weights)
-        if self.regularization == REGULARIZATION_OPTIONS[0]:
+        if self.regularization == REGULARIZATION_OPTIONS[1]:
             self.weights_norm = np.square(self.weights_norm)
 
         forward_mult = self.multiplication.forward(input, self.weights)
@@ -70,8 +68,8 @@ class Layer:
         backward_add, grad_b = self.addition.backward(backward_non_linearity)
         backward_mult_x, backward_mult_w = self.multiplication.backward(backward_add)
 
-        # TODO Re check this part
-        self.bias -= self.learning_rate * np.mean(grad_b, axis=1).reshape(self.bias.shape)
+        # Update weights
+        self.bias -= self.learning_rate * np.sum(grad_b, axis=1)  # .reshape(self.bias.shape)
         if self.regularization == REGULARIZATION_OPTIONS[1]:    # L2
             self.weights -= self.learning_rate * (backward_mult_w + 2 * self.weight_decay * self.weights)
         else:                                                   # L1
