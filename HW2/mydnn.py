@@ -44,6 +44,7 @@ class MyDNN:
         self.weight_decay = weight_decay
 
     def fit(self, x_train, y_train, epochs, batch_size, learning_rate, x_val=None, y_val=None):
+        # TODO be sure that we pass the learning rate
         """
         Description:
 

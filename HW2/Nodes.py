@@ -110,11 +110,11 @@ class SoftMax(Node):
 
     def backward(self, back_received):
         S = self.func_forward(self.value).T
-
+        gradiant = back_received.T
         out = np.zeros(self.value.shape).T
         for index, sample in enumerate(S):
             jac = self.jacobian(sample)
-            out[index] = jac @ sample
+            out[index] = gradiant[index] @ jac
 
         return out.T
 
@@ -195,13 +195,16 @@ if __name__ == '__main__':
     relu = Relu()
     mse = MSE()
     ent = Entropy()
+    for iter in range(1000):
+        after_mult = m.forward(x, w)
+        after_add = add.forward(after_mult, b)
+        total = soft.forward(after_add)
+        ent.forward(total, labels, 2)
 
-    after_mult = m.forward(x, w)
-    after_add = add.forward(after_mult, b)
-    total = soft.forward(after_add)
-    print("\nSample 1 prediction: " + str(total.T[0]) + "\nSample 2 prediction: " + str(total.T[1]) + "\n")
-    ent.forward(total, labels, 2)
+        out = soft.backward(ent.gradiant)
+        b_d, a = add.backward(out)
+        xm, wm = m.backward(b_d)
+        w = w - 0.2 * wm
+        b = b - 0.2 * np.sum(b_d, axis=1).reshape(b.shape)
 
-    # out = soft.backward(ent.gradiant)
-    # b_d, a = add.backward(out)
-    # xm, wm = m.backward(b_d)
+        print("\nSample 1 prediction: " + str(total.T[0]) + "\nSample 2 prediction: " + str(total.T[1]) + "\n")
