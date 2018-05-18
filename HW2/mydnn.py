@@ -116,8 +116,12 @@ class MyDNN:
         This 1 entry represents the correct classification of that sample.
         """
 
-        # TODO: implement this
-        raise NotImplemented
+        assert isinstance(data, np.ndarray), "Data should be an np.ndarry instance"
+        assert len(data.shape) == 2, "Data should be 2-diemsnional"
+
+        Data = data.T
+        y_hat = self._forward(Data)
+        return y_hat
 
     def _train_epochs(self, Data, Label, sample_num, batch_size):
         """
