@@ -17,8 +17,8 @@ def generate_layer(input_dims, output_dims, non_linearity, regularization, learn
 
 
 if __name__ == "__main__":
-    data_url = "http://deeplearning.net/data/mnist/mnist.pkl.gz"
-    urllib.request.urlretrieve(data_url, "mnist.pkl.gz")
+    # data_url = "http://deeplearning.net/data/mnist/mnist.pkl.gz"
+    # urllib.request.urlretrieve(data_url, "mnist.pkl.gz")
     with gzip.open('mnist.pkl.gz', 'rb') as f:
         train_set, valid_set, test_set = pickle.load(f, encoding='latin1')
 
@@ -30,9 +30,9 @@ if __name__ == "__main__":
 
     num_samples, num_pixels = training_samples.shape
 
-    layers = [generate_layer(num_pixels, 100, "relu", "l2", 0.4)]
-    layers.append(generate_layer(100, 50, "relu", "l2", 0.4))
-    layers.append(generate_layer(50, 10, "softmax", "l2", 0.4))
+    layers = [generate_layer(num_pixels, 100, "relu", "l2", 0.2)]
+    layers.append(generate_layer(100, 50, "relu", "l2", 0.2))
+    layers.append(generate_layer(50, 10, "softmax", "l2", 0.2))
 
-    net = MyDNN(layers, "cross-entropy")  # MSE
+    net = MyDNN(layers, "MSE")  # MSE
     net.fit(training_samples, training_classifications, 100, 512, 0.2, validation_samples, validation_classifications)

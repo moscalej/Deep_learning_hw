@@ -106,15 +106,17 @@ class SoftMax(Node):
     def __init__(self):
         super().__init__()
         self.func_forward = lambda x: np.exp(x) / np.sum(np.exp(x), axis=0)
-        self.jacobian = lambda S: np.diag(S) - S @ S.T
+        self.jacobian = lambda S: np.diag(S) - np.outer(S, S)
 
     def backward(self, back_received):
-        S = self.func_forward(self.value)
-        jacobians = np.apply_along_axis(self.jacobian, axis=1, arr=S)
-        out = np.zeros(self.value.shape)
-        for index, tensor in enumerate(jacobians):
-            out[:, index] = tensor @ back_received[:, index]
-        return out
+        S = self.func_forward(self.value).T
+
+        out = np.zeros(self.value.shape).T
+        for index, sample in enumerate(S):
+            jac = self.jacobian(sample)
+            out[index] = jac @ sample
+
+        return out.T
 
 
 class Loss:
@@ -145,7 +147,7 @@ class MSE(Loss):
         self.input_size_inv = 1 / num_samples
         sq_norm = self.norm(y_hat, y)
         self.error = (0.5 * sq_norm * self.input_size_inv)
-        self.gradient = (y_hat - y) * self.input_size_inv
+        self.gradiant = (y_hat - y) * self.input_size_inv
 
 
 class Entropy(Loss):
@@ -156,7 +158,8 @@ class Entropy(Loss):
     def forward(self, y_hat, y, num_samples):
         self.input_size_inv = 1/num_samples
         self.error = self.func(y, y_hat) * self.input_size_inv
-        self.gradiant = (y - y_hat) * self.input_size_inv  # Todo check if this is ok
+        inv = - 1 / y_hat
+        self.gradiant = y * inv * self.input_size_inv
 
 
 def node_factory(node_name):
@@ -176,9 +179,9 @@ def node_factory(node_name):
 
 if __name__ == '__main__':
     np.random.seed(4)
-    x = np.random.randn(16).reshape([4, 4])
-    w = np.random.randn(20).reshape([5, 4])
-    b = np.random.randn(5).reshape([5, 1])
+    x = np.random.randn(12).reshape([3, 4])
+    w = np.random.randn(9).reshape([3, 3])
+    b = np.random.randn(3).reshape([3, 1])
     m = Multiplication()
     add = Add_node()
     sig = Sigmoid()
@@ -186,8 +189,9 @@ if __name__ == '__main__':
     relu = Relu()
     mse = MSE()
     ent = Entropy()
+    labels = np.eye(3, 4)
     total = soft.forward(add.forward(m.forward(x, w), b))
-    ent.forward(total, np.ones([5, 4]))
+    ent.forward(total, labels, 3)
     out = soft.backward(ent.gradiant)
     b_d, a = add.backward(out)
     xm, wm = m.backward(b_d)

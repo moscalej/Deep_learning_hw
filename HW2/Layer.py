@@ -68,7 +68,6 @@ class Layer:
         backward_add, grad_b = self.addition.backward(backward_non_linearity)
         backward_mult_x, backward_mult_w = self.multiplication.backward(backward_add)
 
-        # Update weights # todo Alejandro shape
         tem = self.learning_rate * np.sum(grad_b, axis=1).reshape(self.bias.shape)
         self.bias -= tem
         if self.regularization == REGULARIZATION_OPTIONS[1]:    # L2
