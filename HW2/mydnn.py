@@ -88,7 +88,7 @@ class MyDNN:
         for iteration in range(1, epochs + 1):
             acc, loss = self._train_epochs(Data, Label, sample_num, batch_size)
 
-            val_loss, val_acc = self._test(Data, Label)
+            val_acc, val_loss = self._test(Data, Label)
 
             print(f'Epoch {iteration} / {epochs + 1} - {t_current} seconds - loss: {loss} -'
                   f' acc: {acc} - val_loss: {val_loss} - val_acc: {val_acc}')
@@ -191,9 +191,10 @@ class MyDNN:
 
         # TODO: Make sure that the below is correct
         acc = sum(np.argmax(y_hat, axis=0) == np.argmax(Label, axis=0))
+        acc = acc / y_hat.shape[1]
 
         loss = self.loss.get_loss() + (weights_norm_sum * self.weight_decay)
-        return loss, acc
+        return acc, loss
 
     def _forward(self, batch_inputs):
         """
