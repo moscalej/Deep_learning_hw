@@ -74,25 +74,19 @@ class MyDNN:
 
 
         """
-
         history = []
-
         Data = x_train.copy()
         sample_num = Data.shape[0]
         Label = self._one_hot(y_train.copy())
-
         for layer in self.layers:
             layer.learning_rate = learning_rate
         tic = time.time()
         for iteration in range(1, epochs + 1):
             acc, loss = self._train_epochs(Data, Label, sample_num, batch_size)
-
             val_acc, val_loss = self._test(Data, Label)
-
             toc = time.time()
             print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} -'
                   f' acc: {acc} - val_loss: {val_loss} - val_acc: {val_acc}')
-
             history.append(dict(
                 iteration=iteration,
                 time=round(toc - tic),
@@ -100,9 +94,7 @@ class MyDNN:
                 acc=acc,
                 val_loss=val_loss,
                 val_acc=val_acc,
-
             ))
-
         return history
 
     def predict(self, data):
@@ -122,6 +114,37 @@ class MyDNN:
         Data = data.T
         y_hat = self._forward(Data)
         return y_hat
+
+    def evaluate(self, X, y, batch_size=None):
+        """
+
+        :param X: input data. An n x m matrix where n is the number of samples and m is the number of features.
+        :param y: a 2d array, the labels of X in one-hot representation for classification
+        or a value for each sample for regression.
+        :param batch_size: batch_size - an optional variable for splitting the prediction
+        into batches for memory compliances.
+        :return: [loss, accuracy] - for regression a list with the loss, for classification the loss and the accuracy.
+        """
+
+        assert isinstance(X, np.ndarray)
+        assert len(X.shape) == 2, "Data should be 2-diemsnional array"
+        assert isinstance(y, np.ndarray)
+        assert len(y.shape) == 2, "Labels should be 2-diemsnional array"
+        assert X.shape[0] == y.shape[0], "Data and Labels should have the same number of samples"
+
+        Data = X.T
+        Label = y
+
+        # correctly handle batch size
+        if batch_size is None or batch_size > Data.shape[0]:
+            acc, loss = self._train_epochs(Data, Label, Data.shape[0], Data.shape[0])
+        else:
+            acc, loss = self._train_epochs(Data, Label, Data.shape[0], batch_size)
+
+        if isinstance(self.loss, MSE):
+            return [loss]
+        else:
+            return [loss, acc]
 
     def _train_epochs(self, Data, Label, sample_num, batch_size):
         """
