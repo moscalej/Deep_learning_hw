@@ -106,11 +106,15 @@ class SoftMax(Node):
     def __init__(self):
         super().__init__()
         self.func_forward = lambda x: np.exp(x) / np.sum(np.exp(x), axis=0)
-        self.func_backward = lambda x: self.func_forward(x) * (1 - self.func_forward(x))
+        self.jacobian = lambda S: np.diag(S) - S @ S.T
 
     def backward(self, back_received):
-        derivative_input = self.func_backward(self.value)
-        return derivative_input * back_received
+        S = self.func_forward(self.value)
+        jacobians = np.apply_along_axis(self.jacobian, axis=1, arr=S)
+        out = np.zeros(self.value.shape)
+        for index, tensor in enumerate(jacobians):
+            out[:, index] = tensor @ back_received[:, index]
+        return out
 
 
 class Loss:
