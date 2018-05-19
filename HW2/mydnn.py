@@ -74,27 +74,66 @@ class MyDNN:
 
 
         """
+
+        # Getting set up
         history = []
         Data = x_train.copy()
         sample_num = Data.shape[0]
         Label = self._one_hot(y_train.copy())
         for layer in self.layers:
             layer.learning_rate = learning_rate
-        tic = time.time()
-        for iteration in range(1, epochs + 1):
-            acc, loss = self._train_epochs(Data, Label, sample_num, batch_size)
-            val_acc, val_loss = self._test(Data, Label)
-            toc = time.time()
-            print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} -'
-                  f' acc: {acc} - val_loss: {val_loss} - val_acc: {val_acc}')
-            history.append(dict(
-                iteration=iteration,
-                time=round(toc - tic),
-                loss=loss,
-                acc=acc,
-                val_loss=val_loss,
-                val_acc=val_acc,
-            ))
+
+        # We are given validation data
+        if x_val is not None:
+
+            val_data = x_val.copy()
+            val_labels = self._one_hot(y_val.copy())
+            tic = time.time()
+
+            for iteration in range(1, epochs + 1):
+                acc, loss = self._train_epochs(Data, Label, sample_num, batch_size)
+                val_acc, val_loss = self._test(val_data, val_labels)
+                toc = time.time()
+                print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} -'
+                      f' acc: {acc} - val_loss: {val_loss} - val_acc: {val_acc}')
+                history_val = {
+                    iteration: iteration,
+                    time: round(toc - tic),
+                    loss: loss,
+                    acc: None,
+                    val_loss: val_loss,
+                    val_acc: None
+                }
+                if isinstance(self.loss, Entropy):
+                    history_val[acc] = acc
+                    history_val[val_acc] = val_acc
+
+                history.append(history_val)
+
+        # We are not given validation data
+        else:
+
+            tic = time.time()
+
+            for iteration in range(1, epochs + 1):
+                acc, loss = self._train_epochs(Data, Label, sample_num, batch_size)
+                toc = time.time()
+                print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} -'
+                      f' acc: {acc}')
+                history_val = dict(
+                    iteration=iteration,
+                    time=round(toc - tic),
+                    loss=loss,
+                    acc=None,
+                    val_loss=None,
+                    val_acc=None,
+                )
+
+                if isinstance(self.loss, Entropy):
+                    history_val[acc] = acc
+
+                history.append(history_val)
+
         return history
 
     def predict(self, data):

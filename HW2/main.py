@@ -6,9 +6,6 @@ from mydnn import MyDNN
 from Macros import generate_layer
 
 
-
-
-
 if __name__ == "__main__":
     # data_url = "http://deeplearning.net/data/mnist/mnist.pkl.gz"
     # urllib.request.urlretrieve(data_url, "mnist.pkl.gz")
