@@ -96,16 +96,16 @@ class MyDNN:
                 toc = time.time()
 
                 history_val = {
-                    iteration: iteration,
-                    time: round(toc - tic),
-                    loss: loss,
-                    acc: None,
-                    val_loss: val_loss,
-                    val_acc: None
+                    'iteration': iteration,
+                    'time': round(toc - tic),
+                    'loss': loss,
+                    'acc': None,
+                    'val_loss': val_loss,
+                    'val_acc': None
                 }
                 if isinstance(self.loss, Entropy):
-                    history_val[acc] = acc
-                    history_val[val_acc] = val_acc
+                    history_val['acc'] = acc
+                    history_val['val_acc'] = val_acc
                     print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} '
                           f'-'f' acc: {acc} - val_loss: {val_loss} - val_acc: {val_acc}')
 
@@ -133,7 +133,7 @@ class MyDNN:
                 )
 
                 if isinstance(self.loss, Entropy):
-                    history_val[acc] = acc
+                    history_val['acc'] = acc
                     print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} -'
                           f' acc: {acc}')
                 else:
