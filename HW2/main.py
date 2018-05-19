@@ -22,5 +22,4 @@ if __name__ == "__main__":
     layers.append(generate_layer(50, 10, "softmax", "l2", 0.2))
 
     net = MyDNN(layers, "MSE")  # MSE
-    log = {}
-    net.fit(training_samples, training_classifications, 200, 512, 0.4, validation_samples, validation_classifications)
+    # net.fit(training_samples, training_classifications, 200, 512, 0.4, validation_samples, validation_classifications)

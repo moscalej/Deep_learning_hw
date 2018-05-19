@@ -44,6 +44,8 @@ class MyDNN:
         self.weight_decay = weight_decay
 
     def fit(self, x_train, y_train, epochs, batch_size, learning_rate, x_val=None, y_val=None):
+        # todo what happend if there is no validation data
+
         """
         Description:
 
@@ -217,6 +219,7 @@ class MyDNN:
 
         acc = []
         error = []
+        batch_size = batch_size if batch_size < sample_num else sample_num
 
         for batch in range(0, sample_num, batch_size):
 
@@ -225,19 +228,18 @@ class MyDNN:
 
             # sum up the norms of the weights. Used for regularization.
             weights_norm_sum = 0
-            for layer in self.layers:
-                weights_norm_sum += layer.weights_norm * layer.weight_decay
-
             # calculate the loss of the samples in this batch
             self.loss.forward(y_hat, shuffled_labels[:, batch: batch_size + batch], sample_num)
 
             # Begin back prop from the loss layer.
+            for layer in self.layers:
+                weights_norm_sum += layer.weights_norm * layer.weight_decay
             # Update the weights and biases of each layer.
             self._backward(self.loss.gradiant)
 
             # Keep track of the error
 
-            error.append(self.loss.error + weights_norm_sum)
+            error.append(self.loss.error + weights_norm_sum * self.weight_decay)
             diff = sum(np.argmax(y_hat, axis=0) == np.argmax(shuffled_labels[:, batch: batch_size + batch], axis=0))
             acc.append(diff / y_hat.shape[1])
 
@@ -258,14 +260,16 @@ class MyDNN:
         Label = Label.T
         y_hat = self._forward(Data)
         weights_norm_sum = 0
+
+        self.loss.forward(y_hat, Label, Data.shape[1])
+
         for layer in self.layers:
             weights_norm_sum += layer.weights_norm
-        self.loss.forward(y_hat, Label, Data.shape[1])
 
         acc = sum(np.argmax(y_hat, axis=0) == np.argmax(Label, axis=0))
         acc = acc / y_hat.shape[1]
 
-        loss = self.loss.get_loss() + (weights_norm_sum * self.weight_decay)
+        loss = self.loss.error + (weights_norm_sum * self.weight_decay)
         return acc, loss
 
     def _forward(self, batch_inputs):
