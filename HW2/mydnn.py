@@ -94,8 +94,7 @@ class MyDNN:
                 acc, loss = self._train_epochs(Data, Label, sample_num, batch_size)
                 val_acc, val_loss = self._test(val_data, val_labels)
                 toc = time.time()
-                print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} -'
-                      f' acc: {acc} - val_loss: {val_loss} - val_acc: {val_acc}')
+
                 history_val = {
                     iteration: iteration,
                     time: round(toc - tic),
@@ -107,7 +106,12 @@ class MyDNN:
                 if isinstance(self.loss, Entropy):
                     history_val[acc] = acc
                     history_val[val_acc] = val_acc
+                    print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} '
+                          f'-'f' acc: {acc} - val_loss: {val_loss} - val_acc: {val_acc}')
 
+                else:
+                    print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} '
+                          f'- val_loss: {val_loss}')
                 history.append(history_val)
 
         # We are not given validation data
@@ -118,8 +122,7 @@ class MyDNN:
             for iteration in range(1, epochs + 1):
                 acc, loss = self._train_epochs(Data, Label, sample_num, batch_size)
                 toc = time.time()
-                print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} -'
-                      f' acc: {acc}')
+
                 history_val = dict(
                     iteration=iteration,
                     time=round(toc - tic),
@@ -131,6 +134,10 @@ class MyDNN:
 
                 if isinstance(self.loss, Entropy):
                     history_val[acc] = acc
+                    print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} -'
+                          f' acc: {acc}')
+                else:
+                    print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss}')
 
                 history.append(history_val)
 
