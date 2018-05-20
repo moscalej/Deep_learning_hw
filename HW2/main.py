@@ -3,7 +3,7 @@ import gzip
 import urllib.request
 from sklearn.preprocessing import scale
 from mydnn import MyDNN
-from Macros import generate_layer
+from Macros import generate_layer, one_hot
 
 
 if __name__ == "__main__":
@@ -13,8 +13,8 @@ if __name__ == "__main__":
         train_set, valid_set, test_set = pickle.load(f, encoding='latin1')
     training_samples = scale(train_set[0], axis=0, with_std=False)
     validation_samples = scale(valid_set[0], axis=0, with_std=False)
-    training_classifications = train_set[1]
-    validation_classifications = valid_set[1]
+    training_classifications = one_hot(train_set[1])
+    validation_classifications = one_hot(valid_set[1])
     num_samples, num_pixels = training_samples.shape
 
     layers = [generate_layer(num_pixels, 100, "relu", "l2", 0.2)]

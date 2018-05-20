@@ -10,7 +10,7 @@ import numpy as np
 
 class Layer:
 
-    def __init__(self, layer_input, layer_output, non_linearity, regularization, learning_rate, weight_decay):
+    def __init__(self, layer_input, layer_output, non_linearity, regularization, learning_rate=0.2, weight_decay=0):
         """
 
         :param weight_decay:

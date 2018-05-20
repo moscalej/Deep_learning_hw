@@ -36,15 +36,15 @@ class MyDNN:
             layer_output = layer[OUTPUT]
             non_linearity = layer[NON_LINEAR]
             regularization = layer[REGULARIZATION]
-            learning_rate = layer[LEARNING_RATE]
-            new_layer = Layer(layer_input, layer_output, non_linearity, regularization, learning_rate, weight_decay)
+            # learning_rate = layer[LEARNING_RATE]
+            new_layer = Layer(layer_input, layer_output, non_linearity, regularization, weight_decay=weight_decay)
             self.layers.append(new_layer)
 
         self.loss = node_factory(loss)
         self.weight_decay = weight_decay
 
     def fit(self, x_train, y_train, epochs, batch_size, learning_rate, x_val=None, y_val=None):
-        # todo what happend if there is no validation data
+
 
         """
         Description:
@@ -83,19 +83,20 @@ class MyDNN:
         sample_num = Data.shape[0]
 
         if isinstance(self.loss, Entropy):
-            Label = self._one_hot(y_train.copy())
+            Label = y_train.copy()
         else:
             Label = y_train.copy()
 
         for layer in self.layers:
             layer.learning_rate = learning_rate
+            layer.weight_decay = self.weight_decay
 
         # We are given validation data
         if x_val is not None:
 
             val_data = x_val.copy()
             if isinstance(self.loss, Entropy):
-                val_labels = self._one_hot(y_val.copy())
+                val_labels = y_val.copy()
             else:
                 val_labels = y_val.copy()
 
