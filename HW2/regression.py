@@ -1,5 +1,6 @@
 import numpy as np
-
+import mydnn
+from Macros import generate_layer
 
 def make_points(m):
     """
@@ -43,3 +44,19 @@ def create_data_sets():
             test_vals.append(func(test_set[x], test_set[y]))
 
     return [small, small_vals, big, big_vals, test, test_vals]
+
+
+if __name__ == "__main__":
+
+    small, small_vals, big, big_vals, test, test_vals = create_data_sets()
+
+    small_layers = [generate_layer(2, 100, "relu", "l2", 0.4)]
+    small_net = mydnn.MyDNN(small_layers, "MSE")
+    small_net.fit(small, small_vals, 200, 50, 0.4)
+
+    big_layers = [generate_layer(2, 1000, "relu", "l2", 0.4)]
+    big_net = mydnn.MyDNN(big_layers, "MSE")
+    big_net.fit(big, big_vals, 2000, 500, 0.4)
+
+    small_results = small_net.evaluate(test, test_vals)
+    big_results = big_net.evaluate(test, test_vals)
