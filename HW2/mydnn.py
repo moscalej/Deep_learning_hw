@@ -190,7 +190,7 @@ class MyDNN:
         assert X.shape[0] == y.shape[0], "Data and Labels should have the same number of samples"
 
         Data = X.T
-        Label = y
+        Label = y.T
 
         # correctly handle batch size
         if batch_size is None or batch_size > Data.shape[0]:

@@ -42,8 +42,9 @@ def create_data_sets():
     test_vals = []
     for x in range(1000):
         for y in range(1000):
-            test.append(np.array([test_set[x], test_set[y]]))
+            test.append([test_set[x], test_set[y]])
             test_vals.append(func(test_set[x], test_set[y]))
+    test = np.array(test)
     test_vals = np.array(test_vals).reshape([len(test_vals), 1])
 
     return [small, small_vals, big, big_vals, test, test_vals]
@@ -52,11 +53,6 @@ def create_data_sets():
 if __name__ == "__main__":
 
     small, small_vals, big, big_vals, test, test_vals = create_data_sets()
-    # print(small.shape)
-    # print(big.shape)
-    print(small_vals.shape)
-    print(big_vals.shape)
-
     small_layers = [generate_layer(2, 100, "relu", "l2", 0.4)]
     small_net = mydnn.MyDNN(small_layers, "MSE")
     small_net.fit(small, small_vals, 200, 50, 0.4)
