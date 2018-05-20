@@ -30,7 +30,7 @@ def create_data_sets():
     for x in small:
         small_vals.append(func(x[0], x[1]))
 
-    big = make_points(100)
+    big = make_points(1000)
     big_vals = []
     for x in big:
         big_vals.append(func(x[0], x[1]))
@@ -49,6 +49,8 @@ def create_data_sets():
 if __name__ == "__main__":
 
     small, small_vals, big, big_vals, test, test_vals = create_data_sets()
+    print(small.shape)
+    print(big.shape)
 
     small_layers = [generate_layer(2, 100, "relu", "l2", 0.4)]
     small_net = mydnn.MyDNN(small_layers, "MSE")

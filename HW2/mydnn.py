@@ -81,7 +81,12 @@ class MyDNN:
         history = []
         Data = x_train.copy()
         sample_num = Data.shape[0]
-        Label = self._one_hot(y_train.copy())
+
+        if isinstance(self.loss, Entropy):
+            Label = self._one_hot(y_train.copy())
+        else:
+            Label = y_train.copy()
+
         for layer in self.layers:
             layer.learning_rate = learning_rate
 
@@ -89,7 +94,11 @@ class MyDNN:
         if x_val is not None:
 
             val_data = x_val.copy()
-            val_labels = self._one_hot(y_val.copy())
+            if isinstance(self.loss, Entropy):
+                val_labels = self._one_hot(y_val.copy())
+            else:
+                val_labels = y_val.copy()
+
             tic = time.time()
 
             for iteration in range(1, epochs + 1):
