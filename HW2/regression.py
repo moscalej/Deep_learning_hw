@@ -23,7 +23,7 @@ def func(x1, x2):
     return x1 * np.exp(- (x1 ** 2) - (x2 ** 2))
 
 
-if __name__ == "__main__":
+def create_data_sets():
     small = make_points(100)
     small_vals = []
     for x in small:
@@ -34,10 +34,12 @@ if __name__ == "__main__":
     for x in big:
         big_vals.append(func(x[0], x[1]))
 
-    test = np.linspace(-2, 2, 1000)
-    test_set = []
+    test_set = np.linspace(-2, 2, 1000)
+    test = []
     test_vals = []
     for x in range(1000):
         for y in range(1000):
-            test_set.append(np.array([test[x], test[y]]))
-            test_vals.append(func(test[x], test[y]))
+            test.append(np.array([test_set[x], test_set[y]]))
+            test_vals.append(func(test_set[x], test_set[y]))
+
+    return [small, small_vals, big, big_vals, test, test_vals]
