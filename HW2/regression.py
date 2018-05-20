@@ -1,6 +1,7 @@
 import numpy as np
 import mydnn
 from Macros import generate_layer
+from Macros import plot_graphs
 
 def make_points(m):
     """
@@ -37,11 +38,11 @@ def create_data_sets():
         big_vals.append(func(x[0], x[1]))
     big_vals = np.array(big_vals).reshape([1000, 1])
 
-    test_set = np.linspace(-2, 2, 1000)
+    test_set = np.linspace(-2, 2, 100)
     test = []
     test_vals = []
-    for x in range(1000):
-        for y in range(1000):
+    for x in range(len(test_set)):
+        for y in range(len(test_set)):
             test.append([test_set[x], test_set[y]])
             test_vals.append(func(test_set[x], test_set[y]))
     test = np.array(test)
@@ -53,13 +54,15 @@ def create_data_sets():
 if __name__ == "__main__":
 
     small, small_vals, big, big_vals, test, test_vals = create_data_sets()
-    small_layers = [generate_layer(2, 100, "relu", "l2", 0.4)]
-    small_net = mydnn.MyDNN(small_layers, "MSE")
-    small_net.fit(small, small_vals, 200, 50, 0.4)
-
-    big_layers = [generate_layer(2, 1000, "relu", "l2", 0.4)]
-    big_net = mydnn.MyDNN(big_layers, "MSE")
-    big_net.fit(big, big_vals, 200, 500, 0.4)
-
+    small_layers = [generate_layer(2, 25, "relu", "l2", 0.4), generate_layer(25, 1, "relu", "l2", 0.4)]
+    small_net = mydnn.MyDNN(small_layers, "MSE", 5e-5)
+    log_s = small_net.fit(small, small_vals, 1_800, 512, 0.4)
+    plot_graphs(log_s)
+    big_layers = [generate_layer(2, 50, "relu", "l2", 0.4),
+                  generate_layer(50, 25, "relu", "l2", 0.4),
+                  generate_layer(25, 1, "relu", "l2", 0.4)]
+    big_net = mydnn.MyDNN(big_layers, "MSE", 5e-5)
+    log_b = big_net.fit(big, big_vals, 1_800, 512, 0.4)
+    plot_graphs(log_b)
     small_results = small_net.evaluate(test, test_vals)
     big_results = big_net.evaluate(test, test_vals)

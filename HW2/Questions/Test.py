@@ -44,7 +44,7 @@ import numpy as np
 layers = [generate_layer(num_pixels, 128, "relu", "l1", 0.2)]
 layers.append(generate_layer(128, 10, "softmax", "l1", 0.2))
 log = {}
-for weight in [5e-3, 5e-2]:
+for weight in [5e-5, 5e-3, 5e-2]:
     net = MyDNN(layers, "cross-entropy", weight)
     log[-round(np.log10(weight))] = net.fit(
         training_samples, training_classifications, 200, 1024, 0.4,

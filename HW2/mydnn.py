@@ -191,17 +191,51 @@ class MyDNN:
 
         Data = X.T
         Label = y.T
+        sample_num = Data.shape[1]
 
         # correctly handle batch size
         if batch_size is None or batch_size > Data.shape[0]:
-            acc, loss = self._train_epochs(Data, Label, Data.shape[0], Data.shape[0])
+            loss, acc = self._eval_batch(Data, Label, sample_num)
+            return self._check_return(acc, loss)
         else:
-            acc, loss = self._train_epochs(Data, Label, Data.shape[0], batch_size)
+            acc = []
+            loss = []
+            for batch in range(0, sample_num, batch_size):
+                # perform a forward pass only on the samples in this batch
+                loss_b, acc_b = self._eval_batch(Data[:, batch: batch_size + batch],
+                                                 Label[:, batch: batch_size + batch], sample_num)
+                acc.append(acc_b)
+                loss.append(loss_b)
+            return self._check_return(np.mean(acc), np.sum(loss))
 
+    def _check_return(self, acc, loss):
         if isinstance(self.loss, MSE):
             return [loss]
         else:
             return [loss, acc]
+
+    def _eval_batch(self, Data, Label, sample_numb):
+        """
+
+        :param Data: shape [features x samples]
+        :param Label: shape [features x samples]
+        :return:
+        """
+
+        y_hat = self._forward(Data)
+        weights_norm_sum = 0
+        self.loss.forward(y_hat, Label, sample_numb)
+        for layer in self.layers:
+            weights_norm_sum += layer.weights_norm * layer.weight_decay
+
+        if isinstance(self.loss, MSE):
+            loss = self.loss.error + weights_norm_sum
+            acc = 0
+            return loss, acc
+        else:
+            loss = self.loss.error + weights_norm_sum
+            acc = sum(np.argmax(y_hat, axis=0) == np.argmax(Label, axis=0))
+            return loss, acc
 
     def _train_epochs(self, Data, Label, sample_num, batch_size):
         """
@@ -252,7 +286,7 @@ class MyDNN:
             diff = sum(np.argmax(y_hat, axis=0) == np.argmax(shuffled_labels[:, batch: batch_size + batch], axis=0))
             acc.append(diff / y_hat.shape[1])
 
-        return np.mean(acc), np.mean(error)
+        return np.mean(acc), np.sum(error)
 
     def _test(self, Data, Label):
         """
