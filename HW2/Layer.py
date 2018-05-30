@@ -41,6 +41,7 @@ class Layer:
         self.weights = self._initialize_weights()
         self.bias = self._initialize_biases()
         self.weights_norm = None
+        self.iteration = 0
 
     def forward(self, input):
         """
@@ -64,6 +65,7 @@ class Layer:
         :param gradiant_in:
         :return: (wights, bias) tuple. derivatives to the previous layer [ ]
         """
+
         backward_non_linearity = self.non_linearity.backward(gradiant_in)
         backward_add, grad_b = self.addition.backward(backward_non_linearity)
         backward_mult_x, backward_mult_w = self.multiplication.backward(backward_add)

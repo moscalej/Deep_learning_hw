@@ -3,7 +3,7 @@ import gzip
 import urllib.request
 from sklearn.preprocessing import scale
 from mydnn import MyDNN
-from Macros import generate_layer, one_hot
+from Macros import generate_layer, one_hot, plot_graphs
 
 
 if __name__ == "__main__":
@@ -17,10 +17,11 @@ if __name__ == "__main__":
     validation_classifications = one_hot(valid_set[1])
     num_samples, num_pixels = training_samples.shape
 
-    layers = [generate_layer(num_pixels, 100, "relu", "l2", 0.2)]
-    layers.append(generate_layer(100, 50, "relu", "l2", 0.2))
-    layers.append(generate_layer(50, 10, "softmax", "l2", 0.2))
+    layers = [generate_layer(num_pixels, 254, "relu", "l2")]
+    layers.append(generate_layer(254, 128, "relu", "l2"))
+    layers.append(generate_layer(128, 10, "softmax", "l2"))
 
-    net = MyDNN(layers, "cross-entropy")  # MSE
-    log = {}
-    net.fit(training_samples, training_classifications, 200, 512, 0.4, validation_samples, validation_classifications)
+    net = MyDNN(layers, "cross-entropy", 5e-5)  # MSE
+    log = net.fit(training_samples, training_classifications, 1000, 2048, 0.8, validation_samples,
+                  validation_classifications)
+    plot_graphs(log)

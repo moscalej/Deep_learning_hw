@@ -2,6 +2,8 @@ import numpy as np
 import mydnn
 from Macros import generate_layer
 from Macros import plot_graphs
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 def make_points(m):
     """
@@ -73,6 +75,16 @@ def create_data_sets():
     return result
 
 
+def surface_plot(matrix, **kwargs):
+    # acquire the cartesian coordinate matrices from the matrix
+    # x is cols, y is rows
+    (x, y) = np.meshgrid(np.arange(matrix.shape[0]), np.arange(matrix.shape[1]))
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    surf = ax.plot_surface(x, y, matrix, **kwargs)
+    return (fig, ax, surf)
+
+
 if __name__ == "__main__":
 
     data_sets = create_data_sets()
@@ -98,3 +110,12 @@ if __name__ == "__main__":
     plot_graphs(log_b)
     small_results = small_net.evaluate(test, test_vals)
     big_results = big_net.evaluate(test, test_vals)
+
+    y_hat_b = big_net.predict(test).reshape([100, 100])
+    fig, ax, surf = surface_plot(y_hat_b)
+    ax.set_title('Prediction of Big net  f(x1,x2)')
+    plt.show()
+    y_real = test_vals.reshape([100, 100])
+    fig, ax, surf = surface_plot(y_real)
+    ax.set_title('Real Values f(x1,x2)')
+    plt.show()
