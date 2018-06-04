@@ -2,7 +2,7 @@
 import os
 from keras.layers import *
 
-from keras.models import Model
+from keras.models import Model, load_model
 from keras.layers import Input, Dense
 import keras
 
@@ -101,12 +101,12 @@ model.compile(loss=keras.losses.categorical_crossentropy,
 model.summary()
 
 #
-tbCallBack = keras.callbacks.TensorBoard(log_dir='.Code/logs/Multi_net_v2_run2/', histogram_freq=0, batch_size=32, write_graph=True,
+tbCallBack = keras.callbacks.TensorBoard(log_dir='.Code/logs/Multi_net_v2_run4/', histogram_freq=0, batch_size=32,
+                                         write_graph=True,
                                          write_grads=True, write_images=True, embeddings_freq=0,
                                          embeddings_layer_names=None, embeddings_metadata=None)
 
-history_fully = model.fit(x_train, y_train, epochs=50, batch_size=1024, validation_data=(x_test, y_test),callbacks=[tbCallBack])
+history_fully = model.fit(x_train, y_train, epochs=1, batch_size=1024, validation_data=(x_test, y_test),
+                          callbacks=[tbCallBack])
 
-model.save('Multi_net_v2_run2.h5')
-model.save_weights('Multi_net_v2_run2_w.h5')
-
+model.sav
