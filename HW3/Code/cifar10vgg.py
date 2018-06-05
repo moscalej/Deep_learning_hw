@@ -210,4 +210,4 @@ if __name__ == '__main__':
     residuals = np.argmax(predicted_x,1)!=np.argmax(y_test,1)
 
     loss = sum(residuals)/len(residuals)
-    print("the validation 0/1 loss is: ",loss)
+    print("the validation 0/1 loss is: ", loss)
