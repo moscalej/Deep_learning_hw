@@ -69,9 +69,9 @@ fire_3 = fire_module(pull_2, squeeze=10, expand=28)
 pull_3 = MaxPool2D()(squeeze_and_exite(fire_3, 112, ratio=9))
 
 fire_4 = fire_module(pull_3, squeeze=10, expand=28)
-pull_4 = AveragePooling2D((3, 3))(squeeze_and_exite(fire_4, 112, ratio=34))
+pull_4 = MaxPool2D()(fire_4)
 
-FL1 = Dropout(0.4)(LeakyReLU()(Dense(32, kernel_regularizer=keras.regularizers.l2(weight_decay))(Flatten()(pull_4))))
+FL1 = Dropout(0.4)(LeakyReLU()(Dense(40, kernel_regularizer=keras.regularizers.l2(weight_decay))(Flatten()(pull_4))))
 
 out = Activation('softmax')(Dense(10)(FL1))
 
@@ -82,12 +82,11 @@ model.compile(loss=keras.losses.categorical_crossentropy,
               optimizer=keras.optimizers.Adam(lr=0.002, beta_1=0.9, beta_2=0.999),
               metrics=['accuracy'])
 model.summary()
+model.save('Inception_normal.h5')
 
-def run(x_train,y_train,x_test,y_test):
-    tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/', histogram_freq=0, batch_size=32, write_graph=True,
-                                             write_grads=False, write_images=False, embeddings_freq=0,
-                                             embeddings_layer_names=None, embeddings_metadata=None)
-
-    history_fully = model.fit(x_train, y_train, epochs=200, batch_size=1024, validation_data=(x_test, y_test))
-
-
+# def run(x_train,y_train,x_test,y_test):
+#     tbCallBack = keras.callbacks.TensorBoard(log_dir='./logs/', histogram_freq=0, batch_size=32, write_graph=True,
+#                                              write_grads=False, write_images=False, embeddings_freq=0,
+#                                              embeddings_layer_names=None, embeddings_metadata=None)
+#
+#     history_fully = model.fit(x_train, y_train, epochs=200, batch_size=1024, validation_data=(x_test, y_test))
