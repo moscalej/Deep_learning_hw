@@ -11,8 +11,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from Code.Preproces import preproces_cfar10
 from tqdm import tqdm
-import pandas as pd
 
+import pandas as pd
 
 class cifar100vgg:
     def __init__(self, train=True):
@@ -25,7 +25,7 @@ class cifar100vgg:
             self.model = self.train(self.model)
         else:
             self.model.load_weights(
-                r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW3\cifar100vgg.h5')
+                r'D:\Ale\Documents\Technion\Deep Learning\DL_HW\HW3\cifar100vgg.h5')
 
     def build_model(self):
         # Build the network of vgg for 10 classes with massive dropout and weight decay as described in the paper.
@@ -200,11 +200,6 @@ x_train, x_test, y_train, y_test = preproces_cfar10()
 clf = cifar100vgg(train=False)
 model = clf.model
 
-predicted_x = model.predict(x_test)
-residuals = (np.argmax(predicted_x, 1) != np.argmax(y_test, 1))
-loss = sum(residuals) / len(residuals)
-print("the validation 0/1 loss is: ", loss)
-
 for _ in range(5):
     model.layers.pop()
     model.outputs = [model.layers[-1].output]
@@ -213,10 +208,8 @@ for _ in range(5):
 for layer in model.layers:
     layer.trainable = False
 
-VGG_x_test = clf.predict(x_test)
-
+VGG_x_test = clf.predict(x_test,normalize=False)
 y_test = np.argmax(y_test, 1)
-
 results = pd.DataFrame(columns=[100, 1_000, 10_000])
 
 for train_size in results.columns:
@@ -227,9 +220,10 @@ for train_size in results.columns:
 
         y_train_small = np.argmax(y_train_small, 1)
 
-        VGG_x_train_small = clf.predict(X_train_small)
+        VGG_x_train_small = clf.predict(X_train_small,normalize=False)
 
         neigh = KNeighborsClassifier(n_neighbors=n_neighbors, n_jobs=-1)
         # train KNN from output of VGG 512 layer:
         neigh.fit(VGG_x_train_small, y_train_small)
         results.loc[n_neighbors, train_size] = neigh.score(VGG_x_test, y_test)
+

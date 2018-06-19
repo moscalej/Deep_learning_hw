@@ -1,5 +1,5 @@
 import numpy as np
-import mydnn
+from mydnn import MyDNN
 from Macros import generate_layer
 from Macros import plot_graphs
 import matplotlib.pyplot as plt
@@ -40,15 +40,15 @@ def create_data_sets():
     small_validation_vals = np.array(small_validation_vals).reshape([100, 1])
 
     big = make_points(1000)
-    big_validation = make_points(1000)
+    big_validation = make_points(200)
     big_vals = []
     big_validation_vals = []
     for x in big:
         big_vals.append(func(x[0], x[1]))
     for x in big_validation:
         big_validation_vals.append(func(x[0], x[1]))
-    big_vals = np.array(big_vals).reshape([1000, 1])
-    big_validation_vals = np.array(big_validation_vals).reshape([1000, 1])
+    big_vals = np.array(big_vals).reshape([len(big_vals), 1])
+    big_validation_vals = np.array(big_validation_vals).reshape([len(big_validation_vals), 1])
 
     test_set = np.linspace(-2, 2, 100)
     test = []
@@ -94,21 +94,22 @@ if __name__ == "__main__":
     small_validation_vals = data_sets["small_validation_vals"]
     big = data_sets["big"]
     big_vals = data_sets["big_vals"]
+    big_validation = data_sets['big_validation']
     big_validation_vals = data_sets["big_validation_vals"]
     test = data_sets["test"]
     test_vals = data_sets["test_vals"]
 
-    small_layers = [generate_layer(2, 25, "relu", "l2", 0.4), generate_layer(25, 1, "relu", "l2", 0.4)]
-    small_net = mydnn.MyDNN(small_layers, "MSE", 5e-5)
-    log_s = small_net.fit(small, small_vals, 1_800, 512, 0.4)
-    plot_graphs(log_s)
-    big_layers = [generate_layer(2, 50, "relu", "l2", 0.4),
-                  generate_layer(50, 25, "relu", "l2", 0.4),
-                  generate_layer(25, 1, "relu", "l2", 0.4)]
-    big_net = mydnn.MyDNN(big_layers, "MSE", 5e-5)
-    log_b = big_net.fit(big, big_vals, 1_800, 512, 0.4)
+    # small_layers = [generate_layer(2, 25, "relu", "l2", 0.4), generate_layer(25, 1, "relu", "l2", 0.4)]
+    # small_net = mydnn.MyDNN(small_layers, "MSE", 5e-5)
+    # log_s = small_net.fit(small, small_vals, 1_800, 512, 0.4)
+    # plot_graphs(log_s)
+    big_layers = [generate_layer(2, 1000, "relu", "l2"),
+                  generate_layer(1000, 1, "none", "l2")
+                  ]
+    big_net = MyDNN(big_layers, "MSE", 9e-5)
+    log_b = big_net.fit(big, big_vals, 600, 512, 0.5, big_validation, big_validation_vals)
     plot_graphs(log_b)
-    small_results = small_net.evaluate(test, test_vals)
+    # small_results = small_net.evaluate(test, test_vals)
     big_results = big_net.evaluate(test, test_vals)
 
     y_hat_b = big_net.predict(test).reshape([100, 100])
