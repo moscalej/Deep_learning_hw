@@ -25,6 +25,6 @@ for f in files:
         for w in range(tiles_per_dim):
 
             crop = im[h*frac_h:(h+1)*frac_h,w*frac_w:(w+1)*frac_w]
-            cv2.imwrite(f'{OUTPUT_DIR}\\{f[:-4]}_{i}.jpg',crop)
+            cv2.imwrite(f'{OUTPUT_DIR}\\{f[:-4]}_{i}.jpg', crop)
             i=i+1
 
