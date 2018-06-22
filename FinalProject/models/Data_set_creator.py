@@ -1,23 +1,83 @@
+import os
+import sys
+import cv2
 
 
 class DSC:
-    def __init__(self, t_value):
+
+    T_VALUES = (2, 4, 5)
+
+    def __init__(self, t_value, images_path):
         """
-        Black and white
+
         """
-        self.data = None
-        self.labels = None
-    def fit(self,X, number_of_combs):
+        self.images = self._unpack_images(images_path)
+        self.cropped_images = self._shred()
+
+    def fit(self, X):
         """
         depending of the t_value value it should shred each sample
         shuffle the picture and get the label
-        X ==> X", Y
+
         :param X:
         :return:
         """
+        raise NotImplemented
 
-    def save(self):
+    def _unpack_images(self, images_path):
         """
-        save the data set in path
-        :return:
+
+        :param image_path: The path to a certain image
+        :return: a list of cv2 image objects in grayscale format
         """
+        assert isinstance(images_path, str)
+        files = os.listdir(images_path)
+        images = filter(lambda x: x[-4:] == ".jpg", files)
+        results = []
+        for image in images:
+            # read image
+            im = cv2.imread(os.path.join(images_path, image))
+            # convert image to gray scale
+            im = cv2.cvtColor(im, cv2.COLOR_RGB2GRAY)
+            results.append(im)
+        return results
+
+    def _shred(self):
+        """
+        Shred each image. return in the same order as the initial images
+        :return: a dictionary which maps to a list of lists.
+
+                given image index i, we map to 3 lists representing image i. These 3 lists represent:
+
+                    0) the first list is the i'th image cropped with t = 2
+                    1) the first list is the i'th image cropped with t = 4
+                    2) the first list is the i'th image cropped with t = 5
+
+                we return this outermost dictionary.
+        """
+
+        images = {}
+        for i in range(len(self.images)):
+
+            im = self.images[i].copy()
+            crops = []
+            for t in self.T_VALUES:
+
+                t_vals = []
+                height = im.shape[0]
+                width = im.shape[1]
+                frac_h = height // t
+                frac_w = width // t
+                for h in range(t):
+
+                    for w in range(t):
+
+                        crop = im[h * frac_h:(h + 1) * frac_h, w * frac_w:(w + 1) * frac_w]
+                        t_vals.append(crop)
+                crops.append(t_vals)
+            images[i] = crops
+        return images
+
+
+
+
