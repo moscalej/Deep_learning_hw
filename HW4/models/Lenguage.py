@@ -15,7 +15,7 @@ def load_imbd(top_words=5000, max_length=150):
     word_to_id["<START>"] = 1
     word_to_id["<OOV>"] = 2
     id_to_word = {v: k for k, v in word_to_id.items()}
-    Data = sequence.pad_sequences(pd.Series(Data).values, maxlen=max_length, truncating='pre')
+    Data = sequence.pad_sequences(pd.Series(Data).values, maxlen=max_length, padding='post', truncating='post')
     return pd.DataFrame(Data), pd.Series(Labels), word_to_id, id_to_word
 
 
