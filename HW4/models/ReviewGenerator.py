@@ -19,15 +19,15 @@ class ReviewGenerator:
 
 
         # sequence model Input and Embeding
-        inputs1 = Input(shape=(review_len,))
+        inputs1 = Input([review_len])
         in_and_embedding = Embedding(VOCABULARY_SIZE,
                                      l_s_t_m_state_size, mask_zero=True,
                                      input_length=review_len)(inputs1)
         in_and_embedding = Dropout(0.3)(in_and_embedding)
 
         #Sensitivity Input
-        input2 = Input((review_len,))
-        # sentiment_flow = Dense(review_len, activation='relu')(input2)
+        input2 = Input([review_len])
+        sentiment_flow = Dense(review_len, activation='relu')(input2)
         sentiment_flow = Reshape([review_len, 1])(input2)
         # Merge the inputs
         merge_layer = concatenate([sentiment_flow, in_and_embedding], axis=2)
@@ -37,8 +37,8 @@ class ReviewGenerator:
         merged_flow = LSTM(l_s_t_m_state_size + 1, return_sequences=True)(merged_flow)
 
         merged_flow = Dropout(0.3)(merged_flow)
-        merged_flow = TimeDistributed(Dense(VOCABULARY_SIZE, activation='softmax'))(merged_flow)
-        model = Model(inputs=[inputs1, input2],outputs= merged_flow)
+        out_final = TimeDistributed(Dense(VOCABULARY_SIZE, activation='softmax'))(merged_flow)
+        model = Model(inputs=[inputs1, input2],outputs= out_final)
         model.compile(loss='categorical_crossentropy',
                       optimizer='adam',
                       metrics=['categorical_accuracy'])

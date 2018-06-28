@@ -34,4 +34,5 @@ if __name__ == '__main__':
     Data, Labels, word_to_id, id_to_word = load_imbd(5000, 100)
     sentiment = np.ones([Data.shape[0],100])* np.reshape(Labels,[Labels.size,1])
     L_rnn = create_labels_rnn(Data)
-    a.model.fit([Data, sentiment], Labels, 1024, 100, validation_split=0.2)
+    a.model.fit([Data, sentiment], L_rnn, 128, 100, validation_split=0.2,verbose=2)
+
