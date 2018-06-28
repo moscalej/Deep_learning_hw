@@ -5,7 +5,6 @@ autors = Alejandro Moscoso
 
 """
 import keras
-
 from models.Lenguage import create_labels_rnn, load_imbd
 from models.ReviewGenerator import ReviewGenerator
 import numpy as np

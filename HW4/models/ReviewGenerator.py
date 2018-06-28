@@ -54,25 +54,25 @@ class ReviewGenerator:
     def generate_text(self,model, seed=["I", "am"], max_len=300, diversity=0.5,word_sentiment=[]):
         """Generate characters from a given seed"""
         result = np.zeros((1,) + max_len)
-        result[0, 0, self.word2ind['<START>']] = 1
+        result[0, 0] = self.word2ind["<START>"]
         next_res_ind = 1
         for s in seed:
-            result[0, next_res_ind, self.word2ind[s]] = 1
+            result[0, next_res_ind ] = self.word2ind[s]
             next_res_ind = next_res_ind + 1
 
         print("[" + seed + "]", end='')
 
-        # next_char = seed[-1]
-        # while next_char != '<EOS>' and next_res_ind < max_len:
-        #     model.reset_states()
-        #     y = model.predict_on_batch(result)[0][next_res_ind - 1]
-        #     next_char_ind = sample(y, temperature=diversity)
-        #     next_char = characters[next_char_ind]
-        #     result[0, next_res_ind, next_char_ind] = 1
-        #     next_res_ind = next_res_ind + 1
-        #     print(next_char, end='')
-        # print()
+        nex_word = seed[-1]
+        while nex_word != '<EOS>' and next_res_ind < max_len:
+            self.model.reset_states()
+            y = self.model.predict_on_batch([result, word_sentiment])[0][next_res_ind - 1]
+            # next_char_ind = sample(y, temperature=diversity)
+            nex_word = np.argmax(y)
+            result[0, next_res_ind] = self.ind2word(y)
+            next_res_ind = next_res_ind + 1
+            print(nex_word, end='')
+        print()
 
 
 if __name__ == '__main__':
-    a = ReviewGenerator(v_size=5_000, review_len=100,l_s_t_m_state_size=64)
+    b = ReviewGenerator(v_size=5_000, review_len=100,l_s_t_m_state_size=64)
