@@ -59,6 +59,15 @@ class Relu(Node):
         return self.value * back_received
 
 
+class TanH(Node):
+    def __init__(self):
+        super(TanH, self).__init__()
+        self.func_forward = lambda x: (1 - np.exp(-2 * x)) / (1 + np.exp(-2 * x))
+
+    def backward(self, back_received):
+        result = back_received * ((-4 * np.exp(-2 * self.value)) / (1 - np.exp(-2 * x) ** 2))
+        return result
+
 class Sigmoid(Node):
     def __init__(self):
         super().__init__()
@@ -165,6 +174,7 @@ def node_factory(node_name):
         multi=Multiplication,
         add=Add_node,
         relu=Relu,
+        tanh=TanH,
         sigmoid=Sigmoid,
         softmax=SoftMax,
         none=NoneNode,
