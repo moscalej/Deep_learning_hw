@@ -10,7 +10,7 @@ class ReviewGenerator:
         else:
             self.model = self._build_model()
 
-    def _build_model(self, v_size=5000, review_len=100):
+    def _build_model(self, v_size=5000, review_len=100_error):
         VOCABULARY_SIZE = v_size
         LSTM_state_size = review_len
 
