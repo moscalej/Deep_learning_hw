@@ -32,9 +32,9 @@ class ReviewGenerator:
         # Merge the inputs
         merge_layer = concatenate([sentiment_flow, in_and_embedding], axis=2)
 
-        merged_flow = LSTM(l_s_t_m_state_size + 1, return_sequences=True)(merge_layer)
-        merged_flow = LSTM(l_s_t_m_state_size + 1, return_sequences=True)(merged_flow)
-        merged_flow = LSTM(l_s_t_m_state_size + 1, return_sequences=True)(merged_flow)
+        merged_flow = LSTM(l_s_t_m_state_size + 64, return_sequences=True)(merge_layer)
+        merged_flow = LSTM(l_s_t_m_state_size + 64, return_sequences=True)(merged_flow)
+        merged_flow = LSTM(l_s_t_m_state_size + 64, return_sequences=True)(merged_flow)
 
         merged_flow = Dropout(0.3)(merged_flow)
         out_final = TimeDistributed(Dense(VOCABULARY_SIZE, activation='softmax'))(merged_flow)
