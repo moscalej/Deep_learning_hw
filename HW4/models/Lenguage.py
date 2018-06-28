@@ -2,7 +2,10 @@ from keras.datasets import imdb
 import pandas as pd
 from keras.preprocessing import sequence
 
+
 # load the dataset but only keep the top words, zero the rest. Introduce special tokens.
+from keras.utils import to_categorical
+import numpy as np
 from sklearn.model_selection import train_test_split
 
 
@@ -22,7 +25,13 @@ def load_imbd(top_words=5000, max_length=150):
 def tranaslte(data_id_rows, id_to_word):
     foo = lambda x: id_to_word[x]
     return data_id_rows.apply(foo)
+def create_labels_rnn(Y):
+    return to_categorical(np.roll(Y,-1))
+
 
 
 if __name__ == '__main__':
-    Data, Labels, word_to_id, id_to_word = load_imbd(5000, 150)
+    Data, Labels, word_to_id, id_to_word = load_imbd(5000, 100)
+    sentiment = np.ones([Data.shape[0],100])* np.reshape(Labels,[Labels.size,1])
+    L_rnn = create_labels_rnn(Data)
+    a.model.fit([Data, sentiment], Labels, 1024, 100, validation_split=0.2)
