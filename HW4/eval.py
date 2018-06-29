@@ -11,17 +11,19 @@ from keras.models import load_model
 
 if __name__ == "__main__":
 
+    # %%
     # Get information necessary to load our model from memory.
     try:
         model_path = sys.argv[1]
     except IndexError as e:
         # TODO: configure this default path based on your system and where you stored the model
-        model_path = r"C:\Users\Zachary Bamberger\PycharmProjects\Deep_Learning\Deep_learning_hw\HW4\Model_rnn.h5"
+        model_path = r"data/Model_rnn.h5"
 
     # Use same initialization as used in training the model. Load trained model from memory.
     trained_model = rg.ReviewGenerator(v_size=5_000, review_len=100, l_s_t_m_state_size=512)
     trained_model.model = load_model(model_path.rsplit(os.sep, 1)[1])
 
+    #%%
     # Define the column vector to represent positive and negative sentiments. These will be used when generating
     # sentences from our model.
     # TODO: make sure these are initialized correctly.
@@ -51,11 +53,13 @@ if __name__ == "__main__":
         else:
             negative_corpus.append(Data[ind])
 
+    #%%
     # Start with unigram model. This will yield best results.
     # Once we know things are working properly, check bigram and trigram models as well.
     positive_bleu = bl.BLEU(reference_sentences=positive_corpus, candidate_sentences=positive_sentences)
     negative_bleu = bl.BLEU(reference_sentences=negative_corpus, candidate_sentences=negative_sentences)
 
+    # %%
     # Print out positive bleu scores in various formats.
     print("Positive bleu cumulative score: " + str(positive_bleu.get_cumulative_candidate_scores()))
     print("Positive bleu mean score: " + str(positive_bleu.get_mean_bleu_score()))
