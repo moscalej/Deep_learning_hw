@@ -1,6 +1,6 @@
 import os
 import sys
-
+from tqdm import tqdm
 import models.Lenguage as lg
 import models.ReviewGenerator as rg
 import models.BLEU as bl
@@ -38,7 +38,7 @@ negative_sentences = []
 trained_model.generate_text(seed='the movie is'.split(), word_sentiment=positive_sentiment, max_len=100)
 # %%
 
-for _ in range(25):
+for _ in tqdm(range(25)):
     positive_sentences.append(
         trained_model.generate_text(word_sentiment=positive_sentiment, max_len=100)
     )
@@ -46,6 +46,7 @@ for _ in range(25):
         trained_model.generate_text(word_sentiment=negative_sentiment, max_len=100)
     )
 
+# %%
 # split data set into positive and negative datasets
 Data, Labels, word_to_id, id_to_word = lg.load_imbd(5000, 100)
 positive_corpus = []

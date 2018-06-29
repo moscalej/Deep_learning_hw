@@ -32,11 +32,15 @@ class ReviewGenerator:
         # Merge the inputs
         merge_layer = concatenate([sentiment_flow, in_and_embedding], axis=2)
 
-        merged_flow = LSTM(l_s_t_m_state_size + 64, return_sequences=True)(merge_layer)
-        merged_flow = LSTM(l_s_t_m_state_size + 64, return_sequences=True)(merged_flow)
-        merged_flow = LSTM(l_s_t_m_state_size + 64, return_sequences=True)(merged_flow)
+        merged_flow = LSTM(l_s_t_m_state_size + 64, dropout=0.4, recurrent_dropout=0.2, return_sequences=True)(
+            merge_layer)
+        merged_flow = LSTM(l_s_t_m_state_size + 64, dropout=0.4, recurrent_dropout=0.2, return_sequences=True)(
+            merged_flow)
+        merged_flow = LSTM(l_s_t_m_state_size + 64, dropout=0.4, recurrent_dropout=0.2, return_sequences=True)(
+            merged_flow)
+        merged_flow = LSTM(l_s_t_m_state_size + 64, dropout=0.4, recurrent_dropout=0.2, return_sequences=True)(
+            merged_flow)
 
-        merged_flow = Dropout(0.3)(merged_flow)
         out_final = TimeDistributed(Dense(VOCABULARY_SIZE, activation='softmax'))(merged_flow)
         model = Model(inputs=[inputs1, input2],outputs= out_final)
         model.compile(loss='categorical_crossentropy',
@@ -51,7 +55,7 @@ class ReviewGenerator:
     def fit(self):
         return self.model.fit()
 
-    def generate_text(self, seed=["the", 'movie', 'was'], max_len=300, diversity=0.5, word_sentiment=[]):
+    def generate_text(self, seed=["the", 'movie', 'was'], max_len=300, diversity=0.5, word_sentiment=[], verbose=0):
         """Generate characters from a given seed"""
         result = np.zeros((1, max_len))
         result[0, 0] = self.word2ind["<START>"]
@@ -60,7 +64,7 @@ class ReviewGenerator:
             result[0, next_res_ind ] = self.word2ind[s]
             next_res_ind = next_res_ind + 1
 
-        print(f'[ {" ".join(seed)}] ')
+        if verbose > 0: print(f'[ {" ".join(seed)}] ')
 
         nex_word = seed[-1]
         while nex_word != '<EOS>' and next_res_ind < max_len:
@@ -70,9 +74,9 @@ class ReviewGenerator:
             nex_word = np.argmax(y)
             result[0, next_res_ind] = nex_word
             next_res_ind = next_res_ind + 1
-            print(f' {self.ind2word[nex_word]}')
+            if verbose > 0: print(f' {self.ind2word[nex_word]}')
         return result
 
 
 if __name__ == '__main__':
-    b = ReviewGenerator(v_size=5_000, review_len=100,l_s_t_m_state_size=64)
+    pass
