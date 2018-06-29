@@ -35,7 +35,8 @@ positive_sentences = []
 negative_sentences = []
 # %%
 
-trained_model.generate_text(seed='the movie is'.split(), word_sentiment=positive_sentiment, max_len=100)
+trained_model.generate_text(seed='your dad'.split(), word_sentiment=negative_sentiment, max_len=100, verbose=1)
+
 # %%
 
 for _ in tqdm(range(25)):

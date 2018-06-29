@@ -71,6 +71,7 @@ class ReviewGenerator:
             self.model.reset_states()
             y = self.model.predict_on_batch([result, word_sentiment])[0][next_res_ind - 1]
             # next_char_ind = sample(y, temperature=diversity)
+            y[2] = 0
             nex_word = np.argmax(y)
             result[0, next_res_ind] = nex_word
             next_res_ind = next_res_ind + 1
