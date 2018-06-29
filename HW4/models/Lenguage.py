@@ -6,7 +6,6 @@ from keras.preprocessing import sequence
 # load the dataset but only keep the top words, zero the rest. Introduce special tokens.
 from keras.utils import to_categorical
 import numpy as np
-from sklearn.model_selection import train_test_split
 
 
 def load_imbd(top_words=5000, max_length=150):
@@ -27,7 +26,8 @@ def tranaslte(data_id_rows, id_to_word):
     return data_id_rows.apply(foo)
 
 def create_labels_rnn(Y):
-    return to_categorical(np.roll(Y,-1))
+    a = to_categorical(np.roll(Y, -1))
+    return a
 
 if __name__ == '__main__':
     Data, Labels, word_to_id, id_to_word = load_imbd(5000, 100)
