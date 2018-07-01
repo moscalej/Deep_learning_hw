@@ -55,6 +55,15 @@ class ReviewGenerator:
     def fit(self):
         return self.model.fit()
 
+    def sample(self, preds, temperature=1.0):
+
+        preds = np.asarray(preds).astype('float64')
+        preds = np.log(preds) / temperature
+        exp_preds = np.exp(preds)
+        preds = exp_preds / np.sum(exp_preds)
+        probas = np.random.multinomial(1, preds, 1)
+        return np.argmax(probas)
+
     def generate_text(self, seed=["the", 'movie', 'was'], max_len=300, diversity=0.5, word_sentiment=[], verbose=0):
         """Generate characters from a given seed"""
         result = np.zeros((1, max_len))
@@ -67,12 +76,13 @@ class ReviewGenerator:
         if verbose > 0: print(f'[ {" ".join(seed)}] ')
 
         nex_word = seed[-1]
-        while nex_word != '<EOS>' and next_res_ind < max_len:
+        while nex_word != "<PAD>" and next_res_ind < max_len:
             self.model.reset_states()
             y = self.model.predict_on_batch([result, word_sentiment])[0][next_res_ind - 1]
             # next_char_ind = sample(y, temperature=diversity)
             y[2] = 0
-            nex_word = np.argmax(y)
+
+            nex_word = self.sample(y, diversity)
             result[0, next_res_ind] = nex_word
             next_res_ind = next_res_ind + 1
             if verbose > 0: print(f' {self.ind2word[nex_word]}')
