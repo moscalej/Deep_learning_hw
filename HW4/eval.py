@@ -37,7 +37,7 @@ positive_sentences = []
 negative_sentences = []
 # %%
 
-p = trained_model.generate_text(seed='<START>'.split(),
+p = trained_model.generate_text(seed='this is'.split(),
                                 word_sentiment=negative_sentiment, max_len=50,
                                 diversity=0.5,
                                 verbose=1, )
