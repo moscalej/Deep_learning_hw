@@ -2,7 +2,7 @@ from nltk.translate.bleu_score import sentence_bleu, corpus_bleu
 
 
 class BLEU:
-    def __init__(self, reference_sentences, candidate_sentences=[], ngram_weights=(1)):
+    def __init__(self, reference_sentences, candidate_sentences=[], ngram_weights=(1, 0, 0, 0)):
         """
 
         :param reference_sentences: inputted list of sentences. Our corpus
@@ -28,7 +28,7 @@ class BLEU:
         :return: the bleu score for list of sentence results (stored in self) given the corpus
          (also stored in self) and the ngram weights tuple.
         """
-        return corpus_bleu(self.reference_sentences, self.candidate_sentences, weights=self.ngram_weights)
+        return corpus_bleu([self.reference_sentences], [self.candidate_sentences], weights=self.ngram_weights)
 
     def get_mean_bleu_score(self):
         """
