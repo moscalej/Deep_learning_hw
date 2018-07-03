@@ -33,6 +33,12 @@ def create_labels_rnn(Y,num_classes):
     return a
 
 
+def pd2list(Data, id_to_word):
+    list = []
+    for row in Data.iterrows():
+        list.append([id_to_word[id] for id in row[1]])
+    return list
+
 
 
 
