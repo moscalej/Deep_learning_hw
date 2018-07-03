@@ -31,10 +31,10 @@ try:
     model_path = sys.argv[1]
 except IndexError as e:
     # TODO: configure this default path based on your system and where you stored the model
-    model_path = "data/96-3.4122.h5"
+    model_path = r"data/200-2.4376.h5"
 
 Data, Labels, word_to_id, id_to_word = lg.load_imbd(1, 1)
-trained_model = rg.ReviewGenerator(load_path=r"data/200-2.4376.h5")
+trained_model = rg.ReviewGenerator(load_path=r"data/200-2.4376.h5", word2ind=word_to_id, ind2word=id_to_word)
 
 # %%
 # Define the column vector to represent positive and negative sentiments. These will be used when generating
@@ -52,8 +52,9 @@ negative_sentences = []
 # %%
 # Print one sequence
 
-p = trained_model.generate_text(seed='i love this'.split(), max_len=REVIEW_LENGHT, temperature=0.3,
-                                word_sentiment=negative_sentiment, verbose=0)
+p = trained_model.generate_text(seed='ones you manage to generate sequences'.split(), max_len=REVIEW_LENGHT,
+                                temperature=0.3,
+                                word_sentiment=positive_sentiment, verbose=0)
 
 print(' '.join([id_to_word[id_] for id_ in p.reshape(-1)]))
 # %%
