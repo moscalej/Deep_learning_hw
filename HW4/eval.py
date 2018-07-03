@@ -7,6 +7,9 @@ import models.BLEU as bl
 import numpy as np
 from keras.models import load_model
 
+WORD_COUNT = 18_000
+REVIEW_LENGHT = 80
+
 # %%
 # Get information necessary to load our model from memory.
 try:
@@ -16,18 +19,18 @@ except IndexError as e:
     model_path = "data/96-3.4122.h5"
 
 # Use same initialization as used in training the model. Load trained model from memory.
-Data, Labels, word_to_id, id_to_word = lg.load_imbd(8000, 200)
-trained_model = rg.ReviewGenerator(v_size=5_000, review_len=200,
+Data, Labels, word_to_id, id_to_word = lg.load_imbd(1, 1)
+trained_model = rg.ReviewGenerator(v_size=WORD_COUNT, review_len=REVIEW_LENGHT,
                                    l_s_t_m_state_size=512,
                                    ind2word=id_to_word, word2ind=word_to_id)
-trained_model.model = load_model("das/200-2.4376.h5")
+trained_model.model = load_model(r"data/200-2.4376.h5")
 
 # %%
 # Define the column vector to represent positive and negative sentiments. These will be used when generating
 # sentences from our model.
 # TODO: make sure these are initialized correctly.
-positive_sentiment = np.ones(shape=[1, 80])
-negative_sentiment = np.zeros(shape=[1, 80])
+positive_sentiment = np.ones(shape=[1, REVIEW_LENGHT])
+negative_sentiment = np.zeros(shape=[1, REVIEW_LENGHT])
 
 mix = positive_sentiment.copy()
 
@@ -38,9 +41,9 @@ negative_sentences = []
 # %%
 
 p = trained_model.generate_text(seed='this is'.split(),
-                                word_sentiment=negative_sentiment, max_len=80,
+                                word_sentiment=negative_sentiment, max_len=REVIEW_LENGHT,
                                 diversity=0.3,
-                                verbose=0)
+                                verbose=1)
 
 
 # %%

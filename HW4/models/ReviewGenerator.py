@@ -78,16 +78,17 @@ class ReviewGenerator:
         if verbose > 0: print(f'[ {" ".join(seed)}] ')
 
         nex_word = seed[-1]
-        while nex_word != "<PAD>" or next_res_ind or '<START>' < max_len:
+        while (nex_word != "<PAD>" or nex_word != '<START>') and next_res_ind < max_len:
             self.model.reset_states()
             y = self.model.predict_on_batch([result, word_sentiment])[0][next_res_ind - 1]
             # next_char_ind = sample(y, temperature=diversity)
             y[2] = 0
 
             nex_word = self.sample(y, diversity)
+
             result[0, next_res_ind] = nex_word
             next_res_ind = next_res_ind + 1
-            if verbose > 0: print(f' {self.ind2word[nex_word]}')
+            if verbose > 0: print(self.ind2word[nex_word])
         return result
 
 
