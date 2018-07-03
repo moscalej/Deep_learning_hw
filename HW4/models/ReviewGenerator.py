@@ -1,6 +1,11 @@
-import keras
+
+#home work
+
+
 from keras.models import Model, load_model
 from keras.layers import *
+import numpy as np
+
 
 
 class ReviewGenerator:
@@ -32,13 +37,10 @@ class ReviewGenerator:
         # Merge the inputs
         merge_layer = concatenate([sentiment_flow, in_and_embedding], axis=2)
 
-        merged_flow = LSTM(l_s_t_m_state_size + 64, dropout=0.4, recurrent_dropout=0.2, return_sequences=True)(
+        merged_flow = LSTM(l_s_t_m_state_size, dropout=0.4, recurrent_dropout=0.2, return_sequences=True)(
             merge_layer)
-        merged_flow = LSTM(l_s_t_m_state_size + 64, dropout=0.4, recurrent_dropout=0.2, return_sequences=True)(
-            merged_flow)
-        merged_flow = LSTM(l_s_t_m_state_size + 64, dropout=0.4, recurrent_dropout=0.2, return_sequences=True)(
-            merged_flow)
-        merged_flow = LSTM(l_s_t_m_state_size + 64, dropout=0.4, recurrent_dropout=0.2, return_sequences=True)(
+
+        merged_flow = LSTM(l_s_t_m_state_size, dropout=0.4, recurrent_dropout=0.2, return_sequences=True)(
             merged_flow)
 
         out_final = TimeDistributed(Dense(VOCABULARY_SIZE, activation='softmax'))(merged_flow)
@@ -76,7 +78,7 @@ class ReviewGenerator:
         if verbose > 0: print(f'[ {" ".join(seed)}] ')
 
         nex_word = seed[-1]
-        while nex_word != "<PAD>" and next_res_ind < max_len:
+        while nex_word != "<PAD>" or next_res_ind or '<START>' < max_len:
             self.model.reset_states()
             y = self.model.predict_on_batch([result, word_sentiment])[0][next_res_ind - 1]
             # next_char_ind = sample(y, temperature=diversity)

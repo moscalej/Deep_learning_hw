@@ -4,31 +4,39 @@ autors = Alejandro Moscoso
          Zac
 
 """
+from sklearn.model_selection import train_test_split
 import keras
-from models.Lenguage import create_labels_rnn, load_imbd
+from models.Lenguage import create_labels_rnn, load_imbd, data_generator
 from models.ReviewGenerator import ReviewGenerator
 import numpy as np
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 #%%
+WORD_COUNT = 18_000
+REVIEW_LENGHT = 80
 
-Data, Labels, word_to_id, id_to_word = load_imbd(5_000, 50)
-sentiment = np.multiply(np.ones([Data.shape[0], 50]), Labels.values.reshape([Labels.size, 1]))
-L_rnn = create_labels_rnn(Data)
-a = ReviewGenerator(v_size=5_000, review_len=50, l_s_t_m_state_size=512)
+Data, Labels, word_to_id, id_to_word = load_imbd(WORD_COUNT, REVIEW_LENGHT)
+
+
+a = ReviewGenerator(v_size=WORD_COUNT, review_len=REVIEW_LENGHT, l_s_t_m_state_size=1024)
 # %%
-filepath = "data/{epoch:02d}-{loss:.4f}.h5"
-tf_log_path = "/tf_log/rnn"
+filepath = "das/{epoch:02d}-{loss:.4f}.h5"
+tf_log_path = "./tf_log/rnn3"
 
-tbCallBack = keras.callbacks.TensorBoard(log_dir=tf_log_path,
+tbCallBack = keras.callbacks.TensorBoard(log_dir='./Tf_log/rnn3',
                                          histogram_freq=0,  write_graph=True,
-                                         write_grads=False, write_images=False, embeddings_freq=0,
-                                         embeddings_layer_names=None, embeddings_metadata=None)
-a.model.summary()
+                                         write_grads=False, write_images=False, embeddings_freq=0,)
+
 checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
 reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5,
-                              patience=1, min_lr=0.00001)
+                              patience=3, min_lr=0.00001,
+                                         embeddings_layer_names=None, embeddings_metadata=None)
+a.model.summary()
 #%%
 
-a.model.fit([Data, sentiment], L_rnn, 1024, 200, validation_split=0.2, verbose=1,
-            initial_epoch=0, callbacks=[tbCallBack, checkpoint, reduce_lr])
-a.model.save('Data/Model_rnn2.h5')
+generator = data_generator(Data,Labels,128,voc_size=WORD_COUNT)
+
+a.model.fit_generator(generator, steps_per_epoch=25_000//128, epochs=200,
+                      verbose=1,callbacks=[tbCallBack, checkpoint, reduce_lr],
+                       use_multiprocessing=True, shuffle=True,initial_epoch=0)
+
+a.model.save('Data/Model_rnn3.h5')

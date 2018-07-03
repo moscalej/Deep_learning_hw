@@ -16,18 +16,18 @@ except IndexError as e:
     model_path = "data/96-3.4122.h5"
 
 # Use same initialization as used in training the model. Load trained model from memory.
-Data, Labels, word_to_id, id_to_word = lg.load_imbd(5000, 100)
-trained_model = rg.ReviewGenerator(v_size=5_000, review_len=100,
+Data, Labels, word_to_id, id_to_word = lg.load_imbd(8000, 200)
+trained_model = rg.ReviewGenerator(v_size=5_000, review_len=200,
                                    l_s_t_m_state_size=512,
                                    ind2word=id_to_word, word2ind=word_to_id)
-trained_model.model = load_model("data\\96-3.4122.h5")
+trained_model.model = load_model("das/200-2.4376.h5")
 
 # %%
 # Define the column vector to represent positive and negative sentiments. These will be used when generating
 # sentences from our model.
 # TODO: make sure these are initialized correctly.
-positive_sentiment = np.ones(shape=[1, 50])
-negative_sentiment = np.zeros(shape=[1, 50])
+positive_sentiment = np.ones(shape=[1, 80])
+negative_sentiment = np.zeros(shape=[1, 80])
 
 mix = positive_sentiment.copy()
 
@@ -38,19 +38,19 @@ negative_sentences = []
 # %%
 
 p = trained_model.generate_text(seed='this is'.split(),
-                                word_sentiment=negative_sentiment, max_len=50,
-                                diversity=0.5,
-                                verbose=1, )
+                                word_sentiment=negative_sentiment, max_len=80,
+                                diversity=0.3,
+                                verbose=0)
 
 
 # %%
 
 for _ in tqdm(range(25)):
     positive_sentences.append(
-        trained_model.generate_text(word_sentiment=positive_sentiment, max_len=50, diversity=0.7)
+        trained_model.generate_text(word_sentiment=positive_sentiment, max_len=200, diversity=0.7)
     )
     negative_sentences.append(
-        trained_model.generate_text(word_sentiment=negative_sentiment, max_len=50, diversity=0.7)
+        trained_model.generate_text(word_sentiment=negative_sentiment, max_len=200, diversity=0.7)
     )
 
 # %%
@@ -74,14 +74,14 @@ negative_bleu = bl.BLEU(reference_sentences=negative_corpus, candidate_sentences
 
 # %%
 # Print out positive bleu scores in various formats.
-print("Positive bleu cumulative score: " + str(positive_bleu.get_cumulative_candidate_scores()))
+# print("Positive bleu cumulative score: " + str(positive_bleu.get_cumulative_candidate_scores()))
 print("Positive bleu mean score: " + str(positive_bleu.get_mean_bleu_score()))
 print("Positive sentence bleu scores:")
 for ps in positive_sentences:
     print(ps, positive_bleu.get_sentence_score(ps))
 
 # Print out negative bleu scores in various formats.
-print("Negative bleu cumulative score: " + str(negative_bleu.get_cumulative_candidate_scores()))
+# print("Negative bleu cumulative score: " + str(negative_bleu.get_cumulative_candidate_scores()))
 print("Negative bleu mean score: " + str(negative_bleu.get_mean_bleu_score()))
 print("Negative sentence bleu scores:")
 for ns in positive_sentences:
