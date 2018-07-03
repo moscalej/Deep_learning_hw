@@ -1,6 +1,6 @@
 #
 """
-autors :        Zachary Bamberger
+Authors :        Zachary Bamberger
                 Alejandro Moscoso
 summary :       This Scrip is use for evaluating
                 and debugging our model, here we generate

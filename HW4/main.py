@@ -1,6 +1,6 @@
 ###
 """
-autors :        Zachary Bamberger
+Authors :        Zachary Bamberger
                 Alejandro Moscoso
 summary :       This Scrip is use for Building
                 and training our model, here we load the

@@ -1,5 +1,5 @@
 """
-autors :     Zachary Bamberger
+Authors :     Zachary Bamberger
              Alejandro Moscoso
 summary :    This Module is in charge of :
              defining the class
