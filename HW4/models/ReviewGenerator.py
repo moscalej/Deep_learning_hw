@@ -25,7 +25,7 @@ class ReviewGenerator:
                                            l_s_t_m_state_size=l_s_t_m_state_size)
         self.word2ind=word2ind
         self.ind2word=ind2word
-        self.fit = self.model.fit
+        # self.fit = self.model.fit
 
     def _build_model(self, v_size=5000, review_len=100, l_s_t_m_state_size=8):
         VOCABULARY_SIZE = v_size
@@ -86,7 +86,6 @@ class ReviewGenerator:
         while nex_word != "<PAD>" and next_res_ind < max_len:
             self.model.reset_states()
             y = self.model.predict_on_batch([result, word_sentiment])[0][next_res_ind - 1]
-            # next_char_ind = sample(y, temperature=diversity)
             y[2] = 0
 
             nex_word = self.sample(y, temperature)

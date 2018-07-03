@@ -34,12 +34,13 @@ except IndexError as e:
     model_path = r"data/200-2.4376.h5"
 
 Data, Labels, word_to_id, id_to_word = lg.load_imbd(1, 1)
-trained_model = rg.ReviewGenerator(load_path=r"data/200-2.4376.h5", word2ind=word_to_id, ind2word=id_to_word)
+trained_model = rg.ReviewGenerator(load_path=r"data/200-2.4376.h5", word2ind=word_to_id, ind2word=id_to_word,
+                                   review_len=REVIEW_LENGHT)
 
 # %%
 # Define the column vector to represent positive and negative sentiments. These will be used when generating
 # sentences from our model.
-# TODO: make sure these are initialized correctly.
+
 positive_sentiment = np.ones(shape=[1, REVIEW_LENGHT])
 negative_sentiment = np.zeros(shape=[1, REVIEW_LENGHT])
 
@@ -52,9 +53,9 @@ negative_sentences = []
 # %%
 # Print one sequence
 
-p = trained_model.generate_text(seed='ones you manage to generate sequences'.split(), max_len=REVIEW_LENGHT,
+p = trained_model.generate_text(seed='the air force is a waste of money'.split(), max_len=REVIEW_LENGHT,
                                 temperature=0.3,
-                                word_sentiment=positive_sentiment, verbose=0)
+                                word_sentiment=negative_sentiment, verbose=0)
 
 print(' '.join([id_to_word[id_] for id_ in p.reshape(-1)]))
 # %%
