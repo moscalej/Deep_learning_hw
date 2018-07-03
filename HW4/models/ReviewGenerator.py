@@ -1,15 +1,22 @@
+"""
+autors :    Zachary Bamberger
+            Alejandro Moscoso
+summary :   This Module is in charge of :
+            defining the class
+            ReviewGenerator
+                witch will be the builder of our network
+                with this class we will train our model
+                and generate sequences
 
-#home work
-
+"""
 
 from keras.models import Model, load_model
 from keras.layers import *
 import numpy as np
 
 
-
 class ReviewGenerator:
-    def __init__(self, word2ind=None,ind2word=None,load_path=None, v_size=5000, review_len=100,l_s_t_m_state_size=8):
+    def __init__(self, word2ind=None, ind2word=None, load_path=None, v_size=5000, review_len=100, l_s_t_m_state_size=8):
         if load_path is not None:
             self.model = load_model(load_path)
         else:
@@ -18,6 +25,7 @@ class ReviewGenerator:
                                            l_s_t_m_state_size=l_s_t_m_state_size)
         self.word2ind=word2ind
         self.ind2word=ind2word
+        self.fit = self.model.fit
 
     def _build_model(self, v_size=5000, review_len=100, l_s_t_m_state_size=8):
         VOCABULARY_SIZE = v_size
@@ -53,9 +61,6 @@ class ReviewGenerator:
 
     def _build_callbacks(self):
         pass
-
-    def fit(self):
-        return self.model.fit()
 
     def sample(self, preds, temperature=1.0):
 

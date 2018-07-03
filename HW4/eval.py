@@ -1,14 +1,27 @@
-import os
+#
+"""
+autors :        Zachary Bamberger
+                Alejandro Moscoso
+summary :       This Scrip is use for evaluating
+                and debugging our model, here we generate
+                the sequences and score then using Blue
+
+"""
+
+# External Modules
 import sys
 from tqdm import tqdm
+import numpy as np
+from keras.models import load_model
+from sklearn.model_selection import train_test_split
+import pandas as pd
+# Internal Modules
 import models.Lenguage as lg
 import models.ReviewGenerator as rg
 from models.Lenguage import pd2list
 import models.BLEU as bl
-import numpy as np
-from keras.models import load_model
-from sklearn.model_selection import train_test_split
 
+# MACROS
 WORD_COUNT = 18_000
 REVIEW_LENGHT = 80
 
@@ -20,12 +33,8 @@ except IndexError as e:
     # TODO: configure this default path based on your system and where you stored the model
     model_path = "data/96-3.4122.h5"
 
-# Use same initialization as used in training the model. Load trained model from memory.
 Data, Labels, word_to_id, id_to_word = lg.load_imbd(1, 1)
-trained_model = rg.ReviewGenerator(v_size=WORD_COUNT, review_len=REVIEW_LENGHT,
-                                   l_s_t_m_state_size=512,
-                                   ind2word=id_to_word, word2ind=word_to_id)
-trained_model.model = load_model(r"data/200-2.4376.h5")
+trained_model = rg.ReviewGenerator(load_path=r"data/200-2.4376.h5")
 
 # %%
 # Define the column vector to represent positive and negative sentiments. These will be used when generating
@@ -41,11 +50,12 @@ mix[0, 10:] = 1
 positive_sentences = []
 negative_sentences = []
 # %%
+# Print one sequence
 
 p = trained_model.generate_text(seed='i love this'.split(), max_len=REVIEW_LENGHT, temperature=0.3,
                                 word_sentiment=negative_sentiment, verbose=0)
 
-print(' '.join([id_to_word[id] for id in p.reshape(-1)]))
+print(' '.join([id_to_word[id_] for id_ in p.reshape(-1)]))
 # %%
 
 for _ in tqdm(range(10)):
@@ -71,14 +81,17 @@ for sentance in mix_sentences:
     print(' '.join([id_to_word[id] if id != 0 else "" for id in sentance.reshape(-1)]))
 
 # %%
-# split data set into positive and negative datasets
+# split data set into positive and negative datasets for the BLUE score
 Data, Labels, word_to_id, id_to_word = lg.load_imbd(18_000, 80)
-
 Sample_D, _, Sample_L, _ = train_test_split(Data, Labels, train_size=0.1)
 
 positive_corpus = pd2list(Sample_D[Sample_L == 1], id_to_word)
-
 negative_corpus = pd2list(Sample_D[Sample_L == 0], id_to_word)
+
+# %%
+
+positive_sentences = pd2list(pd.DataFrame(positive_sentences), id_to_word)
+negative_sentences = pd2list(pd.DataFrame(negative_sentences), id_to_word)
 
 # %%
 # Start with unigram model. This will yield best results.
