@@ -71,8 +71,13 @@ class DSC:
         :return: a list of cv2 image objects in grayscale format
         """
         assert isinstance(images_path, str)
+
         files = os.listdir(images_path)
-        images = filter(lambda x: x[-4:] == ".jpg", files)
+        images = []
+        for file in files:
+            if ".jpeg" in file.lower():
+                images.append(file)
+
         results = []
         for image in images:
             # read image
@@ -82,7 +87,7 @@ class DSC:
             results.append(im)
         return results
 
-    def _shred(self, ind, tval):
+    def shred(self, ind, tval):
         """
 
         Shred image <ind> into <tval> vertical and horizontal partitions.
@@ -90,9 +95,11 @@ class DSC:
         :param ind: the index of the image we would like to shred.
         :param tval: the t value for the shredder. How equidistant vertical/horizontal cuts
         do we make
-        :return: yield a shredded version of the object with the appropriate tval. returned
+        :return: a shredded version of the object with the appropriate tval. returned
         in order of initial list of images.
         """
+
+        result = {}
 
         im = self.images[ind].copy()
         height = im.shape[0]
@@ -102,14 +109,27 @@ class DSC:
 
         h = 0
         w = 0
+        ind = 0
+
         while h < tval:
             while w < tval:
                 crop = im[h * frac_h:(h + 1) * frac_h, w * frac_w:(w + 1) * frac_w]
-                yield crop
+                result[ind] = crop
+                ind += 1
                 w += 1
             h += 1
+        return result
 
 
+if __name__ == "__main__":
+    img_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\images"
+    shredded_image_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\shredded_images"
 
+    dsc = DSC(img_path)
+    for i in range(5):
+        t_val = 2
+        shredded_image = dsc.shred(i, t_val)
+        for image in dsc.generate_data_for_crop(shredded_image, 4, t_val):
+            cv2.imwrite("image_%d" % i, image)
 
 
