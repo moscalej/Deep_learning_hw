@@ -9,19 +9,12 @@ class DSC:
 
     T_VALUES = (2, 4, 5)
 
-    def __init__(self, images_path, sizes):
+    def __init__(self, images_path):
         """
 
         :param images_path: The path to a directory containing our images
-        :param sizes: an iterable of length 3 which represents the number of combinations we would like to make
-        for every unique image (within every distinct value of t)
         """
         self.images = self._unpack_images(images_path)
-        self.cropped_images = self._shred()
-        new_t_2, new_t_4, new_t_5 = self._generate_data(sizes)
-        self.new_t_2 = new_t_2
-        self.new_t_4 = new_t_4
-        self.new_t_5 = new_t_5
 
     def fit(self, X):
         """
@@ -33,32 +26,20 @@ class DSC:
         """
         raise NotImplemented
 
-    def _generate_data(self, sizes):
+    def generate_data_for_crop(self, crops, num_gen, tval):
         """
 
-        :param sizes: an iterable of length 3 which represents the number of combinations we would like to make
-        for every unique image (within every distinct value of t)
-        :return: A new dataset
+        :param crops: a list of components of a single image. An array.
+        :param num_gen: The number of images to generate from a particular crop
+        :param tval: the t value associated with the crops of this image.
+        :return: <num_gen> randomly geneated images (which are 2d numpy arrays) based
+        off of the initial crops of a particular images.
         """
 
-        new_t_2 = []
-        new_t_4 = []
-        new_t_5 = []
-
-        for image, crops in self.cropped_images:
-            for c in crops[0]:
-                for _ in range(sizes[0]):
-                    new_t_2.append(self._generate_new_image(c, 2))
-
-            for c in crops[1]:
-                for _ in range(sizes[1]):
-                    new_t_4.append(self._generate_new_image(c, 4))
-
-            for c in crops[2]:
-                for _ in range(sizes[2]):
-                    new_t_5.append(self._generate_new_image(c, 5))
-
-        return new_t_2, new_t_4, new_t_5
+        i = 0
+        while i < num_gen:
+            yield self._generate_new_image(crops, tval)
+            i += 1
 
 
     @staticmethod
@@ -101,37 +82,33 @@ class DSC:
             results.append(im)
         return results
 
-    def _shred(self):
-        """
-        Shred each image. return in the same order as the initial images
-        :return: a dictionary which maps to a list of lists.
-
-                given image index i, we map to 3 lists representing image i. These 3 lists represent:
-
-                    0) the first list is the i'th image cropped with t = 2
-                    1) the first list is the i'th image cropped with t = 4
-                    2) the first list is the i'th image cropped with t = 5
-
-                we return this outermost dictionary.
+    def _shred(self, ind, tval):
         """
 
-        images = {}
-        for i in range(len(self.images)):
-            im = self.images[i].copy()
-            crops = []
-            for t in self.T_VALUES:
-                t_vals = []
-                height = im.shape[0]
-                width = im.shape[1]
-                frac_h = height // t
-                frac_w = width // t
-                for h in range(t):
-                    for w in range(t):
-                        crop = im[h * frac_h:(h + 1) * frac_h, w * frac_w:(w + 1) * frac_w]
-                        t_vals.append(crop)
-                crops.append(t_vals)
-            images[i] = crops
-        return images
+        Shred image <ind> into <tval> vertical and horizontal partitions.
+
+        :param ind: the index of the image we would like to shred.
+        :param tval: the t value for the shredder. How equidistant vertical/horizontal cuts
+        do we make
+        :return: yield a shredded version of the object with the appropriate tval. returned
+        in order of initial list of images.
+        """
+
+        im = self.images[ind].copy()
+        height = im.shape[0]
+        width = im.shape[1]
+        frac_h = height // tval
+        frac_w = width // tval
+
+        h = 0
+        w = 0
+        while h < tval:
+            while w < tval:
+                crop = im[h * frac_h:(h + 1) * frac_h, w * frac_w:(w + 1) * frac_w]
+                yield crop
+                w += 1
+            h += 1
+
 
 
 
