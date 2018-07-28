@@ -16,7 +16,7 @@ class DSC:
         :param t_value: the t value we use to partition each image
         :param num_gen: the number of permutations of the crops of a particular image
         """
-        # TODO: create a function which determines num gen automatically as a function of t_value
+
         self.t_value = t_value
         self.num_gen = num_gen
         self.images = self._unpack_images(images_path)
@@ -63,7 +63,6 @@ class DSC:
         Shred image <ind> into <tval> vertical and horizontal partitions.
 
         :param ind: the index of the image we would like to shred.
-        :param tval: the t value for the shredder. How equidistant vertical/horizontal cuts
         do we make
         :return: a shredded version of the object with the appropriate tval. returned
         in order of initial list of images.
@@ -92,21 +91,10 @@ class DSC:
             h += 1
         return result
 
-    def fit(self, X):
-        """
-        depending of the t_value value it should shred each sample
-        shuffle the picture and get the label
-
-        :param X:
-        :return:
-        """
-        raise NotImplemented
-
     def generate_batch(self, batch_size):
         """
 
         :param batch_size: the desired batch size
-        :param specs:
         :return:
             1) a tensor of dimensions <batch size> x <pictures> x <224> x <224>
             2) a tensor of dimensions <batch size> x
@@ -115,30 +103,16 @@ class DSC:
         image_size = len(self.images)
         place = 0
         index = 0
-        while (True):
+        while True:
             image_tensor = np.zeros([batch_size, 224, 224, 1])
             sequence = []
             for index in range(batch_size):
-                image, order = self._generate_new_image(index + place)
+                image, order_r = self._generate_new_image(index + place)
                 image_tensor[index] = image.reshape([224, 224, 1])
-                sequence.append(np.array(order))
+                sequence.append(np.array(order_r))
 
             yield image_tensor, to_categorical(np.array(sequence))
             place = (place + index) % image_size
-
-    def _generate_data_for_crop(self, crops, num_gen, tval):
-        """
-        :param crops: a list of components of a single image. An array.
-        :param num_gen: The number of images to generate from a particular crop
-        :param tval: the t value associated with the crops of this image.
-        :return: <num_gen> randomly geneated images (which are 2d numpy arrays) based
-        off of the initial crops of a particular images.
-        """
-
-        i = 0
-        while i < num_gen:
-            yield self._generate_new_image(crops, tval)
-            i += 1
 
     def _generate_new_image(self, ind):
         """
@@ -150,17 +124,16 @@ class DSC:
         """
 
         # Shuffle the crops
-        order = [x for x in range(self.t_value ** 2)]
-        random.shuffle(order)
-        order_iter = iter(order)
+        order_l = [x for x in range(self.t_value ** 2)]
+        random.shuffle(order_l)
+        order_iter = iter(order_l)
         # Construct a new images from the shuffled crops
         rows = []
         for row in range(self.t_value):
-            new_row = np.array([])
-            line_list = [self.image_crops[ind][next(order_iter)].copy() for column in range(self.t_value)]
+            line_list = [self.image_crops[ind][next(order_iter)].copy() for _ in range(self.t_value)]
             rows.append(np.hstack(line_list))
         new_img = np.vstack(rows)
-        return cv2.resize(new_img, (224, 224)), np.array(order)
+        return cv2.resize(new_img, (224, 224)), np.array(order_l)
 
 
 if __name__ == "__main__":
