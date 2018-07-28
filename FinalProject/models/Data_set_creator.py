@@ -53,7 +53,8 @@ class DSC:
 
         # Shuffle the crops
         crops = image.copy()
-        crops = random.shuffle(crops)
+        order = [x for x in range(t**2)]
+        random.shuffle(order)
 
         # Construct a new images from the shuffled crops
         new_img = np.array([])
@@ -75,7 +76,7 @@ class DSC:
         files = os.listdir(images_path)
         images = []
         for file in files:
-            if ".jpeg" in file.lower():
+            if ".jp" in file.lower():
                 images.append(file)
 
         results = []
@@ -84,6 +85,7 @@ class DSC:
             im = cv2.imread(os.path.join(images_path, image))
             # convert image to gray scale
             im = cv2.cvtColor(im, cv2.COLOR_RGB2GRAY)
+            im = cv2.resize(im, (224,224))
             results.append(im)
         return results
 
@@ -122,14 +124,10 @@ class DSC:
 
 
 if __name__ == "__main__":
-    img_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\images"
+    img_path = r"D:\Ale\Documents\Technion\Deep Learning\DL_HW\FinalProject\data\documents"
     shredded_image_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\shredded_images"
 
     dsc = DSC(img_path)
-    for i in range(5):
-        t_val = 2
-        shredded_image = dsc.shred(i, t_val)
-        for image in dsc.generate_data_for_crop(shredded_image, 4, t_val):
-            cv2.imwrite("image_%d" % i, image)
+
 
 
