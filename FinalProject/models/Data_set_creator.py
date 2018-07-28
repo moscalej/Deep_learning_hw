@@ -118,7 +118,7 @@ class DSC:
         index = 0
         while(True):
             image_tensor = np.zeros([batch_size,224,224,1])
-            sequence = np.array([]).repeat([batch_size,self.t_value])
+            sequence = np.array([]).reshape([batch_size,self.t_value])
             for index in range(batch_size):
                 image, order = self._generate_new_image(index + place)
                 image_tensor[index] = image
