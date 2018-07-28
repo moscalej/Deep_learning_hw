@@ -118,13 +118,13 @@ class DSC:
         index = 0
         while(True):
             image_tensor = np.zeros([batch_size,224,224,1])
-            sequence = np.array([]).reshape([batch_size,self.t_value])
+            sequence = []
             for index in range(batch_size):
                 image, order = self._generate_new_image(index + place)
-                image_tensor[index] = image
-                sequence[index] = np.array(order)
+                image_tensor[index] = image.reshape([224,224,1])
+                sequence.append(np.array(order))
 
-            yield image_tensor , to_categorical(sequence)
+            yield image_tensor , to_categorical(np.array(sequence))
             place = (place + index) % image_size
 
 
@@ -133,7 +133,6 @@ class DSC:
 
     def _generate_data_for_crop(self, crops, num_gen, tval):
         """
-
         :param crops: a list of components of a single image. An array.
         :param num_gen: The number of images to generate from a particular crop
         :param tval: the t value associated with the crops of this image.
@@ -166,7 +165,7 @@ class DSC:
             line_list = [self.image_crops[ind][next(order_iter)].copy() for column in range(self.t_value) ]
             rows.append(np.hstack(line_list))
         new_img = np.vstack(rows)
-        return new_img , np.array(order)
+        return cv2.resize(new_img, (224,224)) , np.array(order)
 
 
 if __name__ == "__main__":
@@ -175,4 +174,6 @@ if __name__ == "__main__":
     # shredded_image_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\shredded_images"
     dsc = DSC(images_path=img_path, t_value=3, num_gen=4)
     new_imge, order = dsc._generate_new_image(0)
+    iter3 = dsc.generate_batch(10)
+    a, b = next(iter3)
     plt.imshow(new_imge)
