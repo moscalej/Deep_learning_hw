@@ -2,6 +2,7 @@ import os
 import cv2
 import random
 import numpy as np
+from keras.utils import to_categorical
 import matplotlib.pyplot as plt
 
 
@@ -157,20 +158,21 @@ class DSC:
         # Shuffle the crops
         order = [x for x in range(self.t_value**2)]
         random.shuffle(order)
-
+        order_iter = iter(order)
         # Construct a new images from the shuffled crops
-        new_img = np.array([[]])
+        rows = []
         for row in range(self.t_value):
             new_row = np.array([])
-            for column in range(self.t_value):
-                np.concatenate((new_row, self.image_crops[ind][row * (self.t_value + 1) + (column + 1)]), axis=1)
-            np.concatenate((new_img, new_row), axis=0)
-        return new_img
+            line_list = [self.image_crops[ind][next(order_iter)].copy() for column in range(self.t_value) ]
+            rows.append(np.hstack(line_list))
+        new_img = np.vstack(rows)
+        return new_img , np.array(order)
 
 
 if __name__ == "__main__":
-    img_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\images"
-    shredded_image_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\shredded_images"
-    dsc = DSC(images_path=img_path, t_value=2, num_gen=4)
-    new_imge = dsc._generate_new_image(0)
+
+    img_path = r"D:\Ale\Documents\Technion\Deep Learning\DL_HW\FinalProject\data\images"
+    # shredded_image_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\shredded_images"
+    dsc = DSC(images_path=img_path, t_value=3, num_gen=4)
+    new_imge, order = dsc._generate_new_image(0)
     plt.imshow(new_imge)
