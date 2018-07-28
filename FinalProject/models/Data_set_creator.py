@@ -1,69 +1,26 @@
 import os
-import sys
 import cv2
 import random
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class DSC:
 
     T_VALUES = (2, 4, 5)
 
-    def __init__(self, images_path):
+    def __init__(self, images_path, t_value, num_gen):
         """
 
         :param images_path: The path to a directory containing our images
+        :param t_value: the t value we use to partition each image
+        :param num_gen: the number of permutations of the crops of a particular image
         """
+        # TODO: create a function which determines num gen automatically as a function of t_value
+        self.t_value = t_value
+        self.num_gen = num_gen
         self.images = self._unpack_images(images_path)
-
-    def fit(self, X):
-        """
-        depending of the t_value value it should shred each sample
-        shuffle the picture and get the label
-
-        :param X:
-        :return:
-        """
-        raise NotImplemented
-
-    def generate_data_for_crop(self, crops, num_gen, tval):
-        """
-
-        :param crops: a list of components of a single image. An array.
-        :param num_gen: The number of images to generate from a particular crop
-        :param tval: the t value associated with the crops of this image.
-        :return: <num_gen> randomly geneated images (which are 2d numpy arrays) based
-        off of the initial crops of a particular images.
-        """
-
-        i = 0
-        while i < num_gen:
-            yield self._generate_new_image(crops, tval)
-            i += 1
-
-
-    @staticmethod
-    def _generate_new_image(image, t):
-        """
-
-        :param image: a list of crops for a particular image with a particular value t
-        :param t: the number of partitions by rows and columns we performed. Either 2, 4, or 5
-        :return: A new image composed by reassembling a shuffled set of cropped images
-        """
-
-        # Shuffle the crops
-        crops = image.copy()
-        order = [x for x in range(t**2)]
-        random.shuffle(order)
-
-        # Construct a new images from the shuffled crops
-        new_img = np.array([])
-        for row in range(t):
-            new_row = np.array([])
-            for column in range(t):
-                np.concatenate((new_row, crops[row * t + column]), axis=1)
-            np.concatenate((new_img, new_row), axis=0)
-        return new_img
+        self.image_crops = self._create_crops()
 
     def _unpack_images(self, images_path):
         """
@@ -89,7 +46,18 @@ class DSC:
             results.append(im)
         return results
 
-    def shred(self, ind, tval):
+    def _create_crops(self):
+        """
+
+        :return: a dictionary mapping the image index to a dictionary
+        of crops (i.e., a crop index to the crop object).
+        """
+        result = {}
+        for i in range(len(self.images)):
+            result[i] = self._shred(i)
+        return result
+
+    def _shred(self, ind):
         """
 
         Shred image <ind> into <tval> vertical and horizontal partitions.
@@ -102,6 +70,7 @@ class DSC:
         """
 
         result = {}
+        tval = self.t_value
 
         im = self.images[ind].copy()
         height = im.shape[0]
@@ -116,18 +85,79 @@ class DSC:
         while h < tval:
             while w < tval:
                 crop = im[h * frac_h:(h + 1) * frac_h, w * frac_w:(w + 1) * frac_w]
+                print(ind)
                 result[ind] = crop
                 ind += 1
                 w += 1
+            w = 0
             h += 1
         return result
 
+    def fit(self, X):
+        """
+        depending of the t_value value it should shred each sample
+        shuffle the picture and get the label
+
+        :param X:
+        :return:
+        """
+        raise NotImplemented
+
+    def generate_batch(self, batch_size):
+        """
+
+        :param batch_size: the desired batch size
+        :param specs:
+        :return:
+            1) a tensor of dimensions <batch size> x <pictures> x <224> x <224>
+            2) a tensor of dimensions <batch size> x
+                <Matrix of One hot representation of labels of crops in a particular image>
+        """
+
+    def _generate_data_for_crop(self, crops, num_gen, tval):
+        """
+
+        :param crops: a list of components of a single image. An array.
+        :param num_gen: The number of images to generate from a particular crop
+        :param tval: the t value associated with the crops of this image.
+        :return: <num_gen> randomly geneated images (which are 2d numpy arrays) based
+        off of the initial crops of a particular images.
+        """
+
+        i = 0
+        while i < num_gen:
+            yield self._generate_new_image(crops, tval)
+            i += 1
+
+    def _generate_new_image(self, ind):
+        """
+
+        :param ind: the index of the image we would like to return a new image for.
+        :return:
+            1) A new shuffled image of dimensions 224 x 224
+            2) the order of the crops
+        """
+
+        # Shuffle the crops
+        order = [x for x in range(self.t_value**2)]
+        random.shuffle(order)
+
+        # Construct a new images from the shuffled crops
+        new_img = np.array([])
+        for row in range(t):
+            new_row = np.array([])
+            for column in range(t):
+                np.concatenate((new_row, crops[row * (t+1) + (column + 1)]), axis=1)
+            np.concatenate((new_img, new_row), axis=0)
+        return new_img
+
 
 if __name__ == "__main__":
-    img_path = r"D:\Ale\Documents\Technion\Deep Learning\DL_HW\FinalProject\data\documents"
+    img_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\images"
     shredded_image_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\shredded_images"
-
-    dsc = DSC(img_path)
-
-
-
+    dsc = DSC(images_path=img_path, t_value=2, num_gen=4)
+    # for i in range(5):
+    #     t_val = 2
+    #     shredded_image = dsc.shred(i, t_val)
+    #     for image in dsc.generate_data_for_crop(shredded_image, 4, t_val):
+    #         cv2.imwrite("image_%d" % i, image)
