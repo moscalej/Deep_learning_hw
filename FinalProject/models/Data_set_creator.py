@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 
 
 class DSC:
-
     T_VALUES = (2, 4, 5)
 
     def __init__(self, images_path, t_value, num_gen):
@@ -43,7 +42,7 @@ class DSC:
             im = cv2.imread(os.path.join(images_path, image))
             # convert image to gray scale
             im = cv2.cvtColor(im, cv2.COLOR_RGB2GRAY)
-            im = cv2.resize(im, (224,224))
+            im = cv2.resize(im, (224, 224))
             results.append(im)
         return results
 
@@ -116,20 +115,16 @@ class DSC:
         image_size = len(self.images)
         place = 0
         index = 0
-        while(True):
-            image_tensor = np.zeros([batch_size,224,224,1])
+        while (True):
+            image_tensor = np.zeros([batch_size, 224, 224, 1])
             sequence = []
             for index in range(batch_size):
                 image, order = self._generate_new_image(index + place)
-                image_tensor[index] = image.reshape([224,224,1])
+                image_tensor[index] = image.reshape([224, 224, 1])
                 sequence.append(np.array(order))
 
-            yield image_tensor , to_categorical(np.array(sequence))
+            yield image_tensor, to_categorical(np.array(sequence))
             place = (place + index) % image_size
-
-
-
-
 
     def _generate_data_for_crop(self, crops, num_gen, tval):
         """
@@ -155,21 +150,20 @@ class DSC:
         """
 
         # Shuffle the crops
-        order = [x for x in range(self.t_value**2)]
+        order = [x for x in range(self.t_value ** 2)]
         random.shuffle(order)
         order_iter = iter(order)
         # Construct a new images from the shuffled crops
         rows = []
         for row in range(self.t_value):
             new_row = np.array([])
-            line_list = [self.image_crops[ind][next(order_iter)].copy() for column in range(self.t_value) ]
+            line_list = [self.image_crops[ind][next(order_iter)].copy() for column in range(self.t_value)]
             rows.append(np.hstack(line_list))
         new_img = np.vstack(rows)
-        return cv2.resize(new_img, (224,224)) , np.array(order)
+        return cv2.resize(new_img, (224, 224)), np.array(order)
 
 
 if __name__ == "__main__":
-
     img_path = r"D:\Ale\Documents\Technion\Deep Learning\DL_HW\FinalProject\data\images"
     # shredded_image_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\shredded_images"
     dsc = DSC(images_path=img_path, t_value=3, num_gen=4)
