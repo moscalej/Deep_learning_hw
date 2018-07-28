@@ -112,7 +112,23 @@ class DSC:
             2) a tensor of dimensions <batch size> x
                 <Matrix of One hot representation of labels of crops in a particular image>
         """
-        pass
+        image_size = len(self.images)
+        place = 0
+        index = 0
+        while(True):
+            image_tensor = np.zeros([batch_size,224,224,1])
+            sequence = np.array([]).repeat([batch_size,self.t_value])
+            for index in range(batch_size):
+                image, order = self._generate_new_image(index + place)
+                image_tensor[index] = image
+                sequence[index] = np.array(order)
+
+            yield image_tensor , to_categorical(sequence)
+            place = (place + index) % image_size
+
+
+
+
 
     def _generate_data_for_crop(self, crops, num_gen, tval):
         """

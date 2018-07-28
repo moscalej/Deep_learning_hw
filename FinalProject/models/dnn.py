@@ -24,7 +24,7 @@ def benchmark_model(number_lstm=25, state_size=512, dense_size=512, vgg_trainabl
 
     #  VGG flow feed thru vgg convolutions and then use a single dense
     #  before passing to the RNN part of the network
-    vgg_flow = Conv2D(3, (7, 7), padding='same')(inputs)
+    vgg_flow = Conv2D(3, (1, 1), padding='same')(inputs)
     vgg_flow = model_vgg(vgg_flow)
     vgg_flow = Flatten()(vgg_flow)
     vgg_flow = Dense(dense_size)(vgg_flow)
