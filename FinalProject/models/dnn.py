@@ -3,7 +3,7 @@ from keras.layers import *
 from keras.models import Model
 
 
-def benchmark_model(number_lstm=25, state_size=1024, dense_size=1024, vgg_trainable=False, optimizer='adam'):
+def benchmark_model(number_lstm=25, state_size=512, dense_size=512, vgg_trainable=False, optimizer='adam'):
     """
     Create a DNN witch will be use to predict the sequence
     :param number_lstm: Lenght of the sequence

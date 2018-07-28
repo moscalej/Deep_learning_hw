@@ -33,6 +33,7 @@ def load_imbd(top_words=5000, max_length=150):
     Data = sequence.pad_sequences(pd.Series(Data).values, maxlen=max_length, padding='post', truncating='post')
     return pd.DataFrame(Data), pd.Series(Labels), word_to_id, id_to_word
 
+
 def tranaslte(data_id_rows, id_to_word):
     foo = lambda x: id_to_word[x]
     return data_id_rows.apply(foo)

@@ -53,7 +53,7 @@ negative_sentences = []
 # %%
 # Print one sequence
 
-p = trained_model.generate_text(seed='the air force is a waste of money'.split(), max_len=REVIEW_LENGHT,
+p = trained_model.generate_text(seed='no i can not i have to order flight'.split(), max_len=REVIEW_LENGHT,
                                 temperature=0.3,
                                 word_sentiment=negative_sentiment, verbose=0)
 
