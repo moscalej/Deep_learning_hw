@@ -85,7 +85,6 @@ class DSC:
         while h < tval:
             while w < tval:
                 crop = im[h * frac_h:(h + 1) * frac_h, w * frac_w:(w + 1) * frac_w]
-                print(ind)
                 result[ind] = crop
                 ind += 1
                 w += 1
@@ -113,6 +112,7 @@ class DSC:
             2) a tensor of dimensions <batch size> x
                 <Matrix of One hot representation of labels of crops in a particular image>
         """
+        pass
 
     def _generate_data_for_crop(self, crops, num_gen, tval):
         """
@@ -143,11 +143,11 @@ class DSC:
         random.shuffle(order)
 
         # Construct a new images from the shuffled crops
-        new_img = np.array([])
-        for row in range(t):
+        new_img = np.array([[]])
+        for row in range(self.t_value):
             new_row = np.array([])
-            for column in range(t):
-                np.concatenate((new_row, crops[row * (t+1) + (column + 1)]), axis=1)
+            for column in range(self.t_value):
+                np.concatenate((new_row, self.image_crops[ind][row * (self.t_value + 1) + (column + 1)]), axis=1)
             np.concatenate((new_img, new_row), axis=0)
         return new_img
 
@@ -156,8 +156,5 @@ if __name__ == "__main__":
     img_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\images"
     shredded_image_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\shredded_images"
     dsc = DSC(images_path=img_path, t_value=2, num_gen=4)
-    # for i in range(5):
-    #     t_val = 2
-    #     shredded_image = dsc.shred(i, t_val)
-    #     for image in dsc.generate_data_for_crop(shredded_image, 4, t_val):
-    #         cv2.imwrite("image_%d" % i, image)
+    new_imge = dsc._generate_new_image(0)
+    plt.imshow(new_imge)
