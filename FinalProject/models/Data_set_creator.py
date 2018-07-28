@@ -9,16 +9,14 @@ import matplotlib.pyplot as plt
 class DSC:
     T_VALUES = (2, 4, 5)
 
-    def __init__(self, images_path, t_value, num_gen):
+    def __init__(self, images_path, t_value):
         """
 
         :param images_path: The path to a directory containing our images
         :param t_value: the t value we use to partition each image
-        :param num_gen: the number of permutations of the crops of a particular image
         """
 
         self.t_value = t_value
-        self.num_gen = num_gen
         self.images = self._unpack_images(images_path)
         self.image_crops = self._create_crops()
 
@@ -139,7 +137,7 @@ class DSC:
 if __name__ == "__main__":
     img_path = r"D:\Ale\Documents\Technion\Deep Learning\DL_HW\FinalProject\data\images"
     # shredded_image_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\shredded_images"
-    dsc = DSC(images_path=img_path, t_value=3, num_gen=4)
+    dsc = DSC(images_path=img_path, t_value=3)
     new_imge, order = dsc._generate_new_image(0)
     iter3 = dsc.generate_batch(10)
     a, b = next(iter3)
