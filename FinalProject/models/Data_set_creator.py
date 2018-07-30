@@ -110,7 +110,7 @@ class DSC:
                 sequence.append(np.array(order_r))
 
             yield image_tensor, to_categorical(np.array(sequence))
-            place = (place + index) % image_size
+            place = (place + index) % (image_size - 2 * batch_size)
 
     def _generate_new_image(self, ind):
         """
@@ -135,7 +135,7 @@ class DSC:
 
 
 if __name__ == "__main__":
-    img_path = r"D:\Ale\Documents\Technion\Deep Learning\DL_HW\FinalProject\data\images"
+    img_path = r"C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\FinalProject\data\images"
     # shredded_image_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\shredded_images"
     dsc = DSC(images_path=img_path, t_value=3)
     new_imge, order = dsc._generate_new_image(0)

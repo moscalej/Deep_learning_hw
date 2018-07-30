@@ -14,7 +14,7 @@ def benchmark_model(number_lstm=25, state_size=512, dense_size=512, vgg_trainabl
     :return:
     """
     #  Load vgg architecture
-    model_vgg = keras.applications.vgg19.VGG19(
+    model_vgg = keras.applications.vgg16.VGG16(
         include_top=False, weights=None, input_tensor=None,
         input_shape=(224, 224, 3), pooling=None, classes=1000)
     model_vgg.trainable = vgg_trainable
