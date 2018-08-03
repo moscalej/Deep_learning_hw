@@ -2,6 +2,8 @@ import os
 import cv2
 import random
 import numpy as np
+import sklearn
+from sklearn.preprocessing import MinMaxScaler
 from keras.utils import to_categorical
 import matplotlib.pyplot as plt
 
@@ -17,7 +19,10 @@ class DSC:
         """
 
         self.t_value = t_value
+        self.scale = MinMaxScaler((-1,1))
         self.images = self._unpack_images(images_path)
+        self.images = self.images * (2/255) -1
+        np.random.shuffle(self.images)
         self.image_crops = self._create_crops()
 
     def _unpack_images(self, images_path):
@@ -35,14 +40,16 @@ class DSC:
                 images.append(file)
 
         results = []
-        for image in images:
+        for index ,image in enumerate(images):
+            if index % 100==0 :print(image)
             # read image
             im = cv2.imread(os.path.join(images_path, image))
             # convert image to gray scale
             im = cv2.cvtColor(im, cv2.COLOR_RGB2GRAY)
-            im = cv2.resize(im, (224, 224))
+            # im = cv2.resize(im, (224, 224))
+
             results.append(im)
-        return results
+        return np.array(results)
 
     def _create_crops(self):
         """
@@ -82,7 +89,7 @@ class DSC:
         while h < tval:
             while w < tval:
                 crop = im[h * frac_h:(h + 1) * frac_h, w * frac_w:(w + 1) * frac_w]
-                result[ind] = crop
+                result[ind] = cv2.resize(crop , (96,96))
                 ind += 1
                 w += 1
             w = 0
@@ -105,12 +112,13 @@ class DSC:
             image_tensor = np.zeros([batch_size, 224, 224, 1])
             sequence = []
             for index in range(batch_size):
+                print(f"index + place: {index + place}")
                 image, order_r = self._generate_new_image(index + place)
                 image_tensor[index] = image.reshape([224, 224, 1])
                 sequence.append(np.array(order_r))
 
             yield image_tensor, to_categorical(np.array(sequence))
-            place = (place + index) % image_size
+            place = (place + index + 1) % (image_size - batch_size - 1)
 
     def _generate_new_image(self, ind):
         """
@@ -135,10 +143,11 @@ class DSC:
 
 
 if __name__ == "__main__":
-    img_path = r"D:\Ale\Documents\Technion\Deep Learning\DL_HW\FinalProject\data\images"
+    img_path = r"C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\FinalProject\data\images"
     # shredded_image_path = r"C:\Users\Zachary Bamberger\Documents\Technion\Deep Learning\Final Project\shredded_images"
-    dsc = DSC(images_path=img_path, t_value=3)
-    new_imge, order = dsc._generate_new_image(0)
+    dsc = DSC(images_path=img_path, t_value=5)
+    new_imge, order = dsc._generate_new_image(1050)
     iter3 = dsc.generate_batch(10)
     a, b = next(iter3)
     plt.imshow(new_imge)
+    plt.show()
