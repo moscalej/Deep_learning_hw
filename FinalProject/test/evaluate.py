@@ -1,10 +1,7 @@
 import os
 import cv2
-from models.DSC_M import DSCM
 import numpy as np
 import keras
-from models.rnn_clasic import benchmark_model
-from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, TensorBoard
 
 
 def predict(model, image):
@@ -17,7 +14,6 @@ def predict(model, image):
 
 def evaluate(file_dir='example/', model_paths={}):
     """
-
     :param file_dir: the path to a particular image
     :param model_path: a dictionary which maps from a t value to the model corresponding to that t value
     """
@@ -43,6 +39,6 @@ def evaluate(file_dir='example/', model_paths={}):
     t = image.shape[0]
 
     model = keras.models.load_model(model_paths[t])
-    Y = model.predict(image)
+    Y = model.predict(image.reshape([1,t,96,96,1]))
 
     return Y
