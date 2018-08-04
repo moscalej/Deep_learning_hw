@@ -4,7 +4,7 @@ Authors :       Zachary Bamberger
 """
 import numpy as np
 import os
-from models.DSC_M import DSCM
+from models.DSGK import DSGk
 from models.rnn_clasic import benchmark_model
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, TensorBoard
 
@@ -17,17 +17,17 @@ if "Zach" in os.environ.get('USERNAME'):
 
 else:
     image_path = r"C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\FinalProject\data\images"
-    tf_log_path = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\FinalProject\TB\vgg16_bm_t4'
+    tf_log_path = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\FinalProject\TB\vgg16_t2'
     check_point_path = \
-        r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\FinalProject\check_point\vgg16_bm_t4\{epoch:02d}-{loss:.4f}.h5'
+        r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\FinalProject\check_point\vgg16_t2\{epoch:02d}-{loss:.4f}.h5'
 
 
 
 #%%
 #  Data generators
-# t_2_dataset = DSC(images_path=image_path, t_value=2)
-t_4_dataset = DSCM(images_path=image_path, t_value=4)
-# t_5_dataset = DSC(images_path=image_path, t_value=5)
+t_2_dataset = DSGk(images_path=image_path, t_value=2)
+# t_4_dataset = DSGk(images_path=image_path, t_value=4)
+# t_5_dataset = DSGk(images_path=image_path, t_value=5)
 
 #%%
 tbCallBack = TensorBoard(log_dir=tf_log_path,
@@ -40,23 +40,25 @@ reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5,
                               embeddings_layer_names=None, embeddings_metadata=None)
 
 
+
+# %%
+# t_4_dataset_val = DSCM(images_path=r'data/test', t_value=4)
+# generator_val = t_4_dataset_val.generate_batch(128)
+# val_set = [next(generator_val) for _ in range(64)]
+# val_x = np.concatenate([x[0] for x in val_set],axis=0)
+# val_y = np.concatenate([x[1] for x in val_set],axis=0)
 # %%
 
-model = benchmark_model(number_lstm=16, state_size=1024, dense_size=1024, vgg_trainable=False, optimizer='adam')
+model = benchmark_model(number_lstm=4, state_size=1024, dense_size=1024, vgg_trainable=True, optimizer='adam')
 model.summary()
-# %%
-t_4_dataset_val = DSCM(images_path=r'data/test', t_value=4)
-generator_val = t_4_dataset_val.generate_batch(128)
-val_set = [next(generator_val) for _ in range(64)]
-val_x = np.concatenate([x[0] for x in val_set],axis=0)
-val_y = np.concatenate([x[1] for x in val_set],axis=0)
-# %%
 
-generator = t_4_dataset.generate_batch(16)
+# %%
+generator = t_2_dataset.generate_batch(batch_size=4)
+
 #%%
-model.fit_generator(generator, steps_per_epoch=1300//16 , epochs=100,validation_data=[val_x,val_y],
+model.fit_generator(generator, steps_per_epoch=1879//4 , epochs=150,
                       verbose=1, callbacks=[tbCallBack, checkpoint, reduce_lr],
-                      use_multiprocessing=False, shuffle=True, initial_epoch=12)
+                      use_multiprocessing=False, shuffle=True, initial_epoch=0)
 
 
 
