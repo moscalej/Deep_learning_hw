@@ -4,7 +4,7 @@ Authors :       Zachary Bamberger
 """
 import numpy as np
 import os
-from models.DSC_M import DSCM
+from DSC_M import DSCM
 from models.rnn_clasic import benchmark_model
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, TensorBoard
 
