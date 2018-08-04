@@ -53,7 +53,7 @@ val_y = np.concatenate([x[1] for x in val_set],axis=0)
 # %%
 
 generator = t_4_dataset.generate_batch(16)
-
+#%%
 model.fit_generator(generator, steps_per_epoch=1300//16 , epochs=100,validation_data=[val_x,val_y],
                       verbose=1, callbacks=[tbCallBack, checkpoint, reduce_lr],
                       use_multiprocessing=False, shuffle=True, initial_epoch=12)
