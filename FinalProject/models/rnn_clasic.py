@@ -35,6 +35,8 @@ def benchmark_model(number_lstm=25, state_size=1024, dense_size=1024, vgg_traina
 
     rnn_flow = Bidirectional(LSTM(state_size, dropout=0.4, recurrent_dropout=0.2, return_sequences=True))(vgg_flow)
     rnn_flow = Bidirectional(LSTM(state_size, dropout=0.4, recurrent_dropout=0.2, return_sequences=True))(rnn_flow)
+    rnn_flow = Bidirectional(LSTM(state_size, dropout=0.4, recurrent_dropout=0.2, return_sequences=True))(rnn_flow)
+
     out_final = TimeDistributed(Dense(number_lstm, activation='softmax'))(rnn_flow)
 
     #  Model Creation and compilation
