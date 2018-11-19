@@ -64,10 +64,9 @@ class TanH(Node):
         super(TanH, self).__init__()
         self.func_forward = lambda x: (1 - np.exp(-2 * x)) / (1 + np.exp(-2 * x))
 
-    def backward(self, back_received):  # TODO check the backward
-        result = back_received * ((-4 * np.exp(-2 * self.value)) / (1 - np.exp(-2 * self.value) ** 2))
+    def backward(self, back_received):
+        result = back_received * ((-4 * np.exp(-2 * self.value)) / (1 - np.exp(-2 * x) ** 2))
         return result
-
 
 class Sigmoid(Node):
     def __init__(self):
@@ -80,7 +79,7 @@ class Sigmoid(Node):
         return derivative_input * back_received
 
 
-class LinearActivation(Node):
+class NoneNode(Node):
     def __init__(self):
         super().__init__()
         self.func_forward = lambda x: x
@@ -95,7 +94,7 @@ class Multiplication(Gate):
         super().__init__()
         self.func_forward = lambda X, W: W @ X
 
-    def backward(self, back_received): # Todo Check this
+    def backward(self, back_received):
         gx = self.value[1].T @ back_received  # W.T dot DL/Dmul
         gw = back_received @ self.value[0].T  # DL/Dmul dot X.T
         return gx, gw
@@ -110,7 +109,7 @@ class Add_node(Gate):
         return back_received, back_received
 
 
-class SoftMax(Node): # TODO check this softmax 
+class SoftMax(Node):
 
     def __init__(self):
         super().__init__()
@@ -124,32 +123,26 @@ class SoftMax(Node): # TODO check this softmax
         for index, sample in enumerate(S):
             jac = self.jacobian(sample)
             out[index] = gradiant[index] @ jac
+
         return out.T
 
 
 class Loss:
-    def __init__(self):  # Todo Check how to normalize the lost 
+    def __init__(self):
         self.input_size_inv = None
-        self.value = None
+        self.error = None
         self.gradient = None
         self.value = None
 
     @abstractmethod
-    def forward(self, y_hat, y, num_samples):
-        """
-        Here we calculate the gradiant and the loss
-        :param y_hat: 
-        :param y: 
-        :param num_samples: 
-        :return: 
-        """
+    def forward(self, y_hat, y,num_samples):
         pass
 
     def backward(self):
         return self.gradient
 
     def get_loss(self):
-        return self.value
+        return self.error
 
 
 class MSE(Loss):
@@ -160,18 +153,18 @@ class MSE(Loss):
     def forward(self, y_hat, y, num_samples):
         self.input_size_inv = 1 / num_samples
         sq_norm = self.norm(y_hat, y)
-        self.value = (0.5 * sq_norm * self.input_size_inv)
+        self.error = (0.5 * sq_norm * self.input_size_inv)
         self.gradiant = (y_hat - y) * self.input_size_inv
 
 
 class Entropy(Loss):
     def __init__(self):
-        super().__init__() # TODO check if need to be more complicate
+        super().__init__()
         self.func = lambda y, y_hat: - np.sum(y * np.log(y_hat))
 
     def forward(self, y_hat, y, num_samples):
         self.input_size_inv = 1/num_samples
-        self.value = self.func(y, y_hat) * self.input_size_inv
+        self.error = self.func(y, y_hat) * self.input_size_inv
         inv = - 1 / y_hat
         self.gradiant = y * inv * self.input_size_inv
 
@@ -184,7 +177,7 @@ def node_factory(node_name):
         tanh=TanH,
         sigmoid=Sigmoid,
         softmax=SoftMax,
-        none=LinearActivation,
+        none=NoneNode,
         MSE=MSE,
     )
     nodes['cross-entropy'] = Entropy
@@ -196,10 +189,10 @@ if __name__ == '__main__':
     # We create a 4x2 matrix where there are 4 samples and 2 features
     # First layer has 2 output dimensions and softmax loss function
 
-    # np.random.seed(4)
-    # x = np.random.randn(8).reshape([4, 2])
-    # w = np.random.uniform(-0.5, 0.5, [2, 4])
-    # b = np.zeros([2, 1])
+    np.random.seed(4)
+    x = np.random.randn(8).reshape([4, 2])
+    w = np.random.uniform(-0.5, 0.5, [2, 4])
+    b = np.zeros([2, 1])
     labels = np.array([[0, 1],
                        [1, 0]])
 

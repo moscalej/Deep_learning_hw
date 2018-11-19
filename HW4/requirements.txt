@@ -1,0 +1,8 @@
+scikit-learn        # Preprocess
+tqdm                # Bar visualisation
+numpy               # Math
+nltk                # use for the BLUE score
+keras               # Deep Learning
+pandas              # Data manipulation
+matplotlib          # Grpahs
+tensorboard         # Monitoring

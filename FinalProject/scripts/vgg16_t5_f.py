@@ -24,7 +24,9 @@ else:
 
 
 #%%
-
+#  Data generators
+# t_2_dataset = DSC(images_path=image_path, t_value=2)
+# t_4_dataset = DSCM(images_path=image_path, t_value=4)
 t_5_gen = DSGk(images_path=image_path, t_value=5)
 
 #%%
