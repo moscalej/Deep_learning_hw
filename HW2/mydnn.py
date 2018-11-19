@@ -77,7 +77,7 @@ class MyDNN:
 
         """
 
-        # Getting set up
+        # Getting set up # TODO check this and make it elegant LOW
         history = []
         Data = x_train.copy()
         sample_num = Data.shape[0]
@@ -268,7 +268,7 @@ class MyDNN:
         for batch in range(0, sample_num, batch_size):
 
             # perform a forward pass only on the samples in this batch
-            y_hat = self._forward(shuffled_data[:, batch: batch_size + batch])
+            y_hat = self._forward(shuffled_data[:, batch: batch_size + batch]) # TODO Check the residual
 
             # sum up the norms of the weights. Used for regularization.
             weights_norm_sum = 0
@@ -282,8 +282,8 @@ class MyDNN:
             self._backward(self.loss.gradiant)
 
             # Keep track of the error
-
-            error.append(self.loss.error + weights_norm_sum * self.weight_decay)
+            # TODO another forward for the validation DATA (train forward->train backward->validation forward)
+            error.append(self.loss.value + weights_norm_sum * self.weight_decay)
             diff = sum(np.argmax(y_hat, axis=0) == np.argmax(shuffled_labels[:, batch: batch_size + batch], axis=0))
             acc.append(diff / y_hat.shape[1])
 
