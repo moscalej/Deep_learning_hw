@@ -132,10 +132,10 @@ class Loss:
         self.input_size_inv = None
         self.error = None
         self.gradient = None
-        self.value = None
+        # self.value = None
 
     @abstractmethod
-    def forward(self, y_hat, y,num_samples):
+    def forward(self, y_hat, y, num_samples):
         pass
 
     def backward(self):
@@ -154,7 +154,7 @@ class MSE(Loss):
         self.input_size_inv = 1 / num_samples
         sq_norm = self.norm(y_hat, y)
         self.error = (0.5 * sq_norm * self.input_size_inv)
-        self.gradiant = (y_hat - y) * self.input_size_inv
+        self.gradient = (y_hat - y) * self.input_size_inv
 
 
 class Entropy(Loss):
@@ -166,7 +166,7 @@ class Entropy(Loss):
         self.input_size_inv = 1/num_samples
         self.error = self.func(y, y_hat) * self.input_size_inv
         inv = - 1 / y_hat
-        self.gradiant = y * inv * self.input_size_inv
+        self.gradient = y * inv * self.input_size_inv
 
 
 def node_factory(node_name):
@@ -209,7 +209,7 @@ if __name__ == '__main__':
         total = soft.forward(after_add)
         ent.forward(total, labels, 2)
 
-        out = soft.backward(ent.gradiant)
+        out = soft.backward(ent.gradient)
         b_d, a = add.backward(out)
         xm, wm = m.backward(b_d)
         w = w - 0.2 * wm

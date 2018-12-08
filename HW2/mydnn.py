@@ -167,7 +167,7 @@ class MyDNN:
         """
 
         assert isinstance(data, np.ndarray), "Data should be an np.ndarry instance"
-        assert len(data.shape) == 2, "Data should be 2-diemsnional"
+        assert len(data.shape) == 2, "Data should be 2-dimensional"
 
         Data = data.T
         y_hat = self._forward(Data)
@@ -202,9 +202,13 @@ class MyDNN:
             acc = []
             loss = []
             for batch in range(0, sample_num, batch_size):
+                current_size = batch_size
+                # residual handling
+                if batch + batch_size > sample_num:
+                    current_size = sample_num - batch
                 # perform a forward pass only on the samples in this batch
-                loss_b, acc_b = self._eval_batch(Data[:, batch: batch_size + batch],
-                                                 Label[:, batch: batch_size + batch], sample_num)
+                loss_b, acc_b = self._eval_batch(Data[:, batch: current_size + batch],
+                                                 Label[:, batch: current_size + batch], sample_num)
                 acc.append(acc_b)
                 loss.append(loss_b)
             return self._check_return(np.mean(acc), np.sum(loss))
@@ -266,25 +270,28 @@ class MyDNN:
         batch_size = batch_size if batch_size < sample_num else sample_num
 
         for batch in range(0, sample_num, batch_size):
-
+            current_size = batch_size
+            # residual handling
+            if batch + batch_size > sample_num:
+                current_size = sample_num - batch
             # perform a forward pass only on the samples in this batch
-            y_hat = self._forward(shuffled_data[:, batch: batch_size + batch]) # TODO Check the residual
+            y_hat = self._forward(shuffled_data[:, batch: current_size + batch])
 
             # sum up the norms of the weights. Used for regularization.
             weights_norm_sum = 0
             # calculate the loss of the samples in this batch
-            self.loss.forward(y_hat, shuffled_labels[:, batch: batch_size + batch], sample_num)
+            self.loss.forward(y_hat, shuffled_labels[:, batch: current_size + batch], sample_num)
 
             # Begin back prop from the loss layer.
             for layer in self.layers:
                 weights_norm_sum += layer.weights_norm * layer.weight_decay
             # Update the weights and biases of each layer.
-            self._backward(self.loss.gradiant)
+            self._backward(self.loss.gradient)
 
             # Keep track of the error
             # TODO another forward for the validation DATA (train forward->train backward->validation forward)
-            error.append(self.loss.value + weights_norm_sum * self.weight_decay)
-            diff = sum(np.argmax(y_hat, axis=0) == np.argmax(shuffled_labels[:, batch: batch_size + batch], axis=0))
+            error.append(self.loss.error + weights_norm_sum * self.weight_decay)
+            diff = sum(np.argmax(y_hat, axis=0) == np.argmax(shuffled_labels[:, batch: current_size + batch], axis=0))
             acc.append(diff / y_hat.shape[1])
 
         return np.mean(acc), np.sum(error)
