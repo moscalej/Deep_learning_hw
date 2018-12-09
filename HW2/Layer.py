@@ -39,12 +39,14 @@ class Layer:
         self.weights = self._initialize_weights()
         self.bias = self._initialize_biases()
         self.iteration = 0
-        #TODO: deicide if this is better:
+        self.weights_norm = None
+        # TODO: decide if this is better:
         if self.regularization == REGULARIZATION_OPTIONS[1]:
+            self.weights_norm = np.linalg.norm(self.weights)
             self.weights_norm = np.square(self.weights_norm)
         else:
             self.weights_norm = np.linalg.norm(self.weights)
-        # self.weights_norm = None
+
 
     def forward(self, input):
         """
@@ -78,6 +80,7 @@ class Layer:
         if self.regularization == REGULARIZATION_OPTIONS[1]:    # L2
             self.weights -= self.learning_rate * (backward_mult_w + 2 * self.weight_decay * self.weights)
             # TODO: decide if this is the better version
+            self.weights_norm = np.linalg.norm(self.weights)
             self.weights_norm = np.square(self.weights_norm)
         else:                                                   # L1
             # self.weights -= self.learning_rate * (
