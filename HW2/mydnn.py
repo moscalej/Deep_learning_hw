@@ -289,7 +289,6 @@ class MyDNN:
             self._backward(self.loss.gradient)
 
             # Keep track of the error
-            # TODO another forward for the validation DATA (train forward->train backward->validation forward)
             error.append(self.loss.error + weights_norm_sum * self.weight_decay)
             diff = sum(np.argmax(y_hat, axis=0) == np.argmax(shuffled_labels[:, batch: current_size + batch], axis=0))
             acc.append(diff / y_hat.shape[1])
