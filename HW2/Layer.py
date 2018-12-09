@@ -10,20 +10,18 @@ import numpy as np
 
 class Layer:
 
-    def __init__(self, layer_input, layer_output, non_linearity, regularization, learning_rate=0.2, weight_decay=0):
+    def __init__(self, input_size, output_size, non_linearity, regularization, learning_rate=0.2, weight_decay=0):
         """
-
         :param weight_decay:
-        :param layer_input: An int. The dimension of our input
-        :param layer_output: An int. The dimension of our output
+        :param input_size: An int. The dimension of our input
+        :param output_size: An int. The dimension of our output
         :param non_linearity: “nonlinear” string, whose possible values are: “relu”, “sigmoid”, “sotmax” or “none”
         :param regularization: “regularization” string, whose possible values are: “l1” (L1 norm), or “l2” (L2 norm)
         """
 
         # Assertions
-
-        assert isinstance(layer_input, int)
-        assert isinstance(layer_output, int)
+        assert isinstance(input_size, int)
+        assert isinstance(output_size, int)
         assert non_linearity in NON_LINEAR_OPTIONS, \
             (non_linearity + " is not a valid non-linear option")
         assert regularization in REGULARIZATION_OPTIONS, \
@@ -31,8 +29,8 @@ class Layer:
 
         # Attribute setting
         self.weight_decay = weight_decay
-        self.input = layer_input
-        self.output = layer_output
+        self.input = input_size
+        self.output = output_size
         self.learning_rate = learning_rate
         self.non_linearity = node_factory(non_linearity)
         self.regularization = regularization
@@ -40,8 +38,15 @@ class Layer:
         self.addition = node_factory('add')
         self.weights = self._initialize_weights()
         self.bias = self._initialize_biases()
-        self.weights_norm = None
         self.iteration = 0
+        self.weights_norm = None
+        # TODO: decide if this is better:
+        if self.regularization == REGULARIZATION_OPTIONS[1]:
+            self.weights_norm = np.linalg.norm(self.weights)
+            self.weights_norm = np.square(self.weights_norm)
+        else:
+            self.weights_norm = np.linalg.norm(self.weights)
+
 
     def forward(self, input):
         """
@@ -51,10 +56,11 @@ class Layer:
         :param input: [prevuis_layer_dim,1]
         :return: values of the non linear [this layer dim,1]
         """
-        self.weights_norm = np.linalg.norm(self.weights)
-        if self.regularization == REGULARIZATION_OPTIONS[1]:
-            self.weights_norm = np.square(self.weights_norm)
-
+        #TODO: remove norm forward calculation
+        # self.weights_norm = np.linalg.norm(self.weights)  # TODO: Check this flow this is the back of the penalty
+        # if self.regularization == REGULARIZATION_OPTIONS[1]:
+        #     self.weights_norm = np.square(self.weights_norm)
+        #
         forward_mult = self.multiplication.forward(input, self.weights)
         forward_add = self.addition.forward(forward_mult, self.bias)
         return self.non_linearity.forward(forward_add)
@@ -70,13 +76,19 @@ class Layer:
         backward_add, grad_b = self.addition.backward(backward_non_linearity)
         backward_mult_x, backward_mult_w = self.multiplication.backward(backward_add)
 
-        tem = self.learning_rate * np.sum(grad_b, axis=1).reshape(self.bias.shape)
-        self.bias -= tem
+        self.bias -= self.learning_rate * np.sum(grad_b, axis=1).reshape(self.bias.shape)
         if self.regularization == REGULARIZATION_OPTIONS[1]:    # L2
             self.weights -= self.learning_rate * (backward_mult_w + 2 * self.weight_decay * self.weights)
+            # TODO: decide if this is the better version
+            self.weights_norm = np.linalg.norm(self.weights)
+            self.weights_norm = np.square(self.weights_norm)
         else:                                                   # L1
+            # self.weights -= self.learning_rate * (
+            #             backward_mult_w + self.weight_decay * self.weights_norm * self.weights)
+            # TODO: decide if this is the better version
             self.weights -= self.learning_rate * (
-                        backward_mult_w + self.weight_decay * self.weights_norm * self.weights)
+                                    backward_mult_w + self.weight_decay * np.sign(self.weights))
+            self.weights_norm = np.linalg.norm(self.weights)
         return backward_mult_x
 
     def _initialize_weights(self):
