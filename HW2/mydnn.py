@@ -32,19 +32,22 @@ class MyDNN:
 
         # Generate a layer object for each layer dictionary in the architecture list
         for layer in architecture:
-            layer_input = layer[INPUT]
-            layer_output = layer[OUTPUT]
-            non_linearity = layer[NON_LINEAR]
-            regularization = layer[REGULARIZATION]
-            # learning_rate = layer[LEARNING_RATE]
-            new_layer = Layer(layer_input, layer_output, non_linearity, regularization, weight_decay=weight_decay)
+            new_layer = Layer(input_size=layer[INPUT],
+                              output_size=layer[OUTPUT],
+                              non_linearity=layer[NON_LINEAR],
+                              regularization=layer[REGULARIZATION],
+                              learning_rate=layer[LEARNING_RATE],
+                              weight_decay=weight_decay,
+                              learning_rate_decay=layer[LEARNING_RATE_RATE],
+                              decay_rate=layer[DECAY_RATE],
+                              min_lr=layer[LR_MIN]
+                              )
             self.layers.append(new_layer)
 
         self.loss = node_factory(loss)
         self.weight_decay = weight_decay
 
     def fit(self, x_train, y_train, epochs, batch_size, learning_rate, x_val=None, y_val=None):
-
 
         """
         Description:

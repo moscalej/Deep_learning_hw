@@ -22,6 +22,6 @@ if __name__ == "__main__":
     layers.append(generate_layer(128, 10, "softmax", "l2"))
 
     net = MyDNN(layers, "cross-entropy", 5e-5)  # MSE
-    log = net.fit(training_samples, training_classifications, 1000, 2048, 0.8, validation_samples,
+    log = net.fit(training_samples, training_classifications, 50, 2048, 0.8, validation_samples,
                   validation_classifications)
     plot_graphs(log)
