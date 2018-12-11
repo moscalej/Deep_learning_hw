@@ -20,7 +20,7 @@ LOSS_OPTIONS = ["MSE", "cross-entropy"]
 
 
 def generate_layer(input_dims, output_dims, non_linearity, regularization, learning_rate=0.2, learning_rate_decay=0.6,
-                   decay_rate=15 , lr_min=0.0001):
+                   decay_rate=15, lr_min=0.0001):
     return {
         INPUT: input_dims,
         OUTPUT: output_dims,

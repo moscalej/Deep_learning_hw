@@ -77,9 +77,11 @@ class Layer:
         :param gradiant_in:
         :return: (wights, bias) tuple. derivatives to the previous layer [ ]
         """
-        if self.iteration % self.decay_rate is 0:
-            temp = self.learning_rate * self.learning_rate_decay
-            self.learning_rate = temp if temp > self.min_lr else self.min_lr
+        # if self.iteration % self.decay_rate is 0:
+        #     temp = self.learning_rate * self.learning_rate_decay
+        #     self.learning_rate = temp if temp > self.min_lr else self.min_lr
+        #     print("self.learning_rate ")
+        #     print(self.learning_rate )
 
         backward_non_linearity = self.non_linearity.backward(gradiant_in)
         backward_add, grad_b = self.addition.backward(backward_non_linearity)
