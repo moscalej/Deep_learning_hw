@@ -103,8 +103,10 @@ if __name__ == "__main__":
     # small_net = mydnn.MyDNN(small_layers, "MSE", 5e-5)
     # log_s = small_net.fit(small, small_vals, 1_800, 512, 0.4)
     # plot_graphs(log_s)
-    big_layers = [generate_layer(2, 1000, "relu", "l2"),
-                  generate_layer(1000, 1, "none", "l2")
+    big_layers = [generate_layer(2, 100, "relu", "l2"),
+                  generate_layer(100, 100, "none", "l2"),
+                  generate_layer(100, 100, "none", "l2"),
+                  generate_layer(100, 1, "none", "l2")
                   ]
     big_net = MyDNN(big_layers, "MSE", 9e-5)
     log_b = big_net.fit(big, big_vals, 600, 512, 0.5, big_validation, big_validation_vals)
