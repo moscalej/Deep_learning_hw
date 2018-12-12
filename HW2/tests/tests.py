@@ -171,6 +171,25 @@ class Dnn_test(unittest.TestCase):
         out = np.sum(np.sum(labels - total))
         self.assertLessEqual(out, 0.001, msg=f'MSE fail : {out}')
 
+    def test_regresion(self):
+        x = np.array([[1, 1, 4],
+                      [1, 2, 2],
+                      [-1, 3, 5],
+                      [6, 7, -5]]) * 0.1
+        labels = np.array([[4, 2, 6],
+                           [2, 0.1, 2]]) * 0.1
+
+        big_layers = [generate_layer(4, 100, "none", "l2"),
+                      generate_layer(100, 2, "none", "l2"),
+                      ]
+        big_net = MyDNN(big_layers, "MSE", 1e-5)
+        big_net.fit(x.T, labels.T, 1000, 1, 0.2, x.T, labels.T)
+        total = big_net.predict(x.T)
+        print(labels)
+        print(total)
+        out = np.sum(np.sum(labels - total))
+        self.assertLessEqual(out, 0.001, msg=f'MSE fail : {out}')
+
 
 if __name__ == '__main__':
     unittest.main()
