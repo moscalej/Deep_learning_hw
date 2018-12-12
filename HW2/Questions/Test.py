@@ -25,9 +25,8 @@ layers.append(generate_layer(128, 10, "softmax", "l2"))
 log = {}
 for batch in [128, 1024, 6e5]:
     net = MyDNN(layers, "cross-entropy")
-    log[batch] = net.fit(
-        training_samples, training_classifications, 100, batch, 0.4,
-        validation_samples, validation_classifications)
+    log[batch] = net.fit(training_samples, training_classifications, 100, batch, 0.4, validation_samples,
+                         validation_classifications)
 pickle.dump(log, open(f'{log_path}\\Log_first.p', 'wb'))
 
 log = pickle.load(open(f'{log_path}\\Log_first.p', 'rb'))
@@ -45,9 +44,8 @@ layers.append(generate_layer(128, 10, "softmax", "l1"))
 log = {}
 for weight in [5e-4]:
     net = MyDNN(layers, "cross-entropy", weight)
-    log[-round(np.log10(weight))] = net.fit(
-        training_samples, training_classifications, 200, 1024, 0.4,
-        validation_samples, validation_classifications)
+    log[-round(np.log10(weight))] = net.fit(training_samples, training_classifications, 200, 1024, 0.4,
+                                            validation_samples, validation_classifications)
 pickle.dump(log, open(f'{log_path}\\Log_first_l1.p', 'wb'))
 
 log = pickle.load(open(f'{log_path}\\Log_first_l1.p', 'rb'))
@@ -65,9 +63,8 @@ layers.append(generate_layer(128, 10, "softmax", "l2", 0.2))
 log = {}
 for weight in [5e-5, 5e-4, 5e-3]:
     net = MyDNN(layers, "cross-entropy", weight)
-    log[-round(np.log10(weight))] = net.fit(
-        training_samples, training_classifications, 100, 1024, 0.2,
-        validation_samples, validation_classifications)
+    log[-round(np.log10(weight))] = net.fit(training_samples, training_classifications, 100, 1024, 0.2,
+                                            validation_samples, validation_classifications)
 pickle.dump(log, open(f'{log_path}\\Log_first_l2.p', 'wb'))
 
 log = pickle.load(open(f'{log_path}\\Log_first_l2.p', 'rb'))

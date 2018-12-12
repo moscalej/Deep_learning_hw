@@ -47,7 +47,7 @@ class MyDNN:
         self.loss = node_factory(loss)
         self.weight_decay = weight_decay
 
-    def fit(self, x_train, y_train, epochs, batch_size, learning_rate, x_val=None, y_val=None):
+    def fit(self, x_train, y_train, epochs, batch_size, learning_rate, x_val=None, y_val=None, verbose=True):
 
         """
         Description:
@@ -61,6 +61,7 @@ class MyDNN:
         After every epoch the following line will be printed on screen with the values
         of the last epoch.
 
+        :param verbose:
         :param x_train: a Numpy nd-array where each row is a sample
         :param y_train: a 2d array, the labels of X in one-hot representation for classification
                         or a value for each sample for regression.
@@ -119,14 +120,16 @@ class MyDNN:
                     'val_acc': None
                 }
                 if isinstance(self.loss, Entropy):
-                    history_val['acc'] = acc
-                    history_val['val_acc'] = val_acc
-                    print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} '
-                          f'-'f' acc: {acc} - val_loss: {val_loss} - val_acc: {val_acc}')
+                    if verbose is True:
+                        history_val['acc'] = acc
+                        history_val['val_acc'] = val_acc
+                        print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} '
+                              f'-'f' acc: {acc} - val_loss: {val_loss} - val_acc: {val_acc}')
 
                 else:
-                    print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} '
-                          f'- val_loss: {val_loss}')
+                    if verbose is True:
+                        print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} '
+                              f'- val_loss: {val_loss}')
                 history.append(history_val)
 
         # We are not given validation data
@@ -149,10 +152,12 @@ class MyDNN:
 
                 if isinstance(self.loss, Entropy):
                     history_val['acc'] = acc
-                    print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} -'
-                          f' acc: {acc}')
+                    if verbose is True:
+                        print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} -'
+                              f' acc: {acc}')
                 else:
-                    print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss}')
+                    if verbose is True:
+                        print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss}')
 
                 history.append(history_val)
 
