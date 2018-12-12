@@ -10,5 +10,7 @@ Files:          report.pdf
                 mydnn.py
                 Nodes.py
                 main.py
+                regression.py
+                Test.py
                 README.md
                 requirements.txt
