@@ -89,7 +89,7 @@ class Layer:
 
         self.bias -= self.learning_rate * np.sum(grad_b, axis=1).reshape(self.bias.shape)
         if self.regularization == REGULARIZATION_OPTIONS[1]:  # L2
-            self.weights -= self.learning_rate * (backward_mult_w + self.weight_decay * self.weights)
+            self.weights = self.weights - self.learning_rate * (backward_mult_w + self.weight_decay * self.weights)
             self.weights_norm = np.linalg.norm(self.weights)
             self.weights_norm = np.square(self.weights_norm)
         else:  # L1

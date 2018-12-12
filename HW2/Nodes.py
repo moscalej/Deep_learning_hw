@@ -1,8 +1,7 @@
-
 import numpy as np
 from abc import abstractmethod
 
-
+import unittest
 class Node:
     """
     This class is for the nodes from a single input to a single output
@@ -10,6 +9,7 @@ class Node:
     to memorize and different methods to update the values
     This nodes has Only Forward and Backwards
     """
+
     def __init__(self):
         """
         Saves the values for the backward part of the proccess "Working point"
@@ -35,6 +35,7 @@ class Gate:
     to memorize and different methods to update the values
     This nodes has Only Forward and Backwards
     """
+
     def __init__(self):
         self.value = None
         self.func_forward = None
@@ -65,8 +66,9 @@ class TanH(Node):
         self.func_forward = lambda x: (1 - np.exp(-2 * x)) / (1 + np.exp(-2 * x))
 
     def backward(self, back_received):
-        result = back_received * ((-4 * np.exp(-2 * self.value)) / (1 - np.exp(-2 * x) ** 2))
+        result = back_received * ((-4 * np.exp(-2 * self.value)) / (1 - np.exp(-2 * self.value) ** 2))
         return result
+
 
 class Sigmoid(Node):
     def __init__(self):
@@ -163,7 +165,7 @@ class Entropy(Loss):
         self.func = lambda y, y_hat: - np.sum(y * np.log(y_hat))
 
     def forward(self, y_hat, y, num_samples):
-        self.input_size_inv = 1/num_samples
+        self.input_size_inv = 1 / num_samples
         self.error = self.func(y, y_hat) * self.input_size_inv
         inv = - 1 / y_hat
         self.gradient = y * inv * self.input_size_inv
@@ -183,36 +185,3 @@ def node_factory(node_name):
     nodes['cross-entropy'] = Entropy
     return nodes[node_name]()
 
-
-if __name__ == '__main__':
-
-    # We create a 4x2 matrix where there are 4 samples and 2 features
-    # First layer has 2 output dimensions and softmax loss function
-
-    np.random.seed(4)
-    x = np.random.randn(8).reshape([4, 2])
-    w = np.random.uniform(-0.5, 0.5, [2, 4])
-    b = np.zeros([2, 1])
-    labels = np.array([[0, 1],
-                       [1, 0]])
-
-    m = Multiplication()
-    add = Add_node()
-    sig = Sigmoid()
-    soft = SoftMax()
-    relu = Relu()
-    mse = MSE()
-    ent = Entropy()
-    for iter in range(1000):
-        after_mult = m.forward(x, w)
-        after_add = add.forward(after_mult, b)
-        total = soft.forward(after_add)
-        ent.forward(total, labels, 2)
-
-        out = soft.backward(ent.gradient)
-        b_d, a = add.backward(out)
-        xm, wm = m.backward(b_d)
-        w = w - 0.2 * wm
-        b = b - 0.2 * np.sum(b_d, axis=1).reshape(b.shape)
-
-        print("\nSample 1 prediction: " + str(total.T[0]) + "\nSample 2 prediction: " + str(total.T[1]) + "\n")

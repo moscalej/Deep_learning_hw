@@ -14,7 +14,7 @@ LEARNING_RATE_RATE = "learning_rate_decay"
 DECAY_RATE = "decay_rate"
 LR_MIN = "lr_min"
 
-NON_LINEAR_OPTIONS = ["relu", "sigmoid", "softmax", "none"]
+NON_LINEAR_OPTIONS = ["relu", "sigmoid", "softmax", 'tanh', "none"]
 REGULARIZATION_OPTIONS = ["l1", "l2"]
 LOSS_OPTIONS = ["MSE", "cross-entropy"]
 
