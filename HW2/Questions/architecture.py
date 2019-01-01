@@ -37,9 +37,8 @@ for depht in [3]:
 log = {}
 for arch_k in arch.keys():
     net = MyDNN(arch[arch_k], "cross-entropy", 5e-5)
-    log[arch_k] = net.fit(
-        training_samples, training_classifications, 200, 1024, 0.2,
-        validation_samples, validation_classifications)
+    log[arch_k] = net.fit(training_samples, training_classifications, 200, 1024, 0.2, validation_samples,
+                          validation_classifications)
 pickle.dump(log, open(f'..\\LOG\\\\Log_first_arch.p', 'wb'))
 
 log = pickle.load(open(f'..\\LOG\\\\Log_first_arch_after.p', 'rb'))

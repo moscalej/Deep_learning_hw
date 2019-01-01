@@ -10,18 +10,26 @@ OUTPUT = "output"
 NON_LINEAR = "non_linear"
 REGULARIZATION = "regularization"
 LEARNING_RATE = "learning_rate"
+LEARNING_RATE_RATE = "learning_rate_decay"
+DECAY_RATE = "decay_rate"
+LR_MIN = "lr_min"
 
-NON_LINEAR_OPTIONS = ["relu", "sigmoid", "softmax", "none"]
+NON_LINEAR_OPTIONS = ["relu", "sigmoid", "softmax", 'tanh', "none"]
 REGULARIZATION_OPTIONS = ["l1", "l2"]
 LOSS_OPTIONS = ["MSE", "cross-entropy"]
 
 
-def generate_layer(input_dims, output_dims, non_linearity, regularization, learning_rate=0.2):
+def generate_layer(input_dims, output_dims, non_linearity, regularization, learning_rate=0.2, learning_rate_decay=0.6,
+                   decay_rate=15, lr_min=0.0001):
     return {
         INPUT: input_dims,
         OUTPUT: output_dims,
         NON_LINEAR: non_linearity,
-        REGULARIZATION: regularization
+        REGULARIZATION: regularization,
+        LEARNING_RATE: learning_rate,
+        LEARNING_RATE_RATE: learning_rate_decay,
+        DECAY_RATE: decay_rate,
+        LR_MIN: lr_min
     }
 
 

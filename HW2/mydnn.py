@@ -32,19 +32,22 @@ class MyDNN:
 
         # Generate a layer object for each layer dictionary in the architecture list
         for layer in architecture:
-            layer_input = layer[INPUT]
-            layer_output = layer[OUTPUT]
-            non_linearity = layer[NON_LINEAR]
-            regularization = layer[REGULARIZATION]
-            # learning_rate = layer[LEARNING_RATE]
-            new_layer = Layer(layer_input, layer_output, non_linearity, regularization, weight_decay=weight_decay)
+            new_layer = Layer(input_size=layer[INPUT],
+                              output_size=layer[OUTPUT],
+                              non_linearity=layer[NON_LINEAR],
+                              regularization=layer[REGULARIZATION],
+                              learning_rate=layer[LEARNING_RATE],
+                              weight_decay=weight_decay,
+                              learning_rate_decay=layer[LEARNING_RATE_RATE],
+                              decay_rate=layer[DECAY_RATE],
+                              min_lr=layer[LR_MIN]
+                              )
             self.layers.append(new_layer)
 
         self.loss = node_factory(loss)
         self.weight_decay = weight_decay
 
-    def fit(self, x_train, y_train, epochs, batch_size, learning_rate, x_val=None, y_val=None):
-
+    def fit(self, x_train, y_train, epochs, batch_size, learning_rate, x_val=None, y_val=None, verbose=True):
 
         """
         Description:
@@ -58,6 +61,7 @@ class MyDNN:
         After every epoch the following line will be printed on screen with the values
         of the last epoch.
 
+        :param verbose:
         :param x_train: a Numpy nd-array where each row is a sample
         :param y_train: a 2d array, the labels of X in one-hot representation for classification
                         or a value for each sample for regression.
@@ -77,7 +81,7 @@ class MyDNN:
 
         """
 
-        # Getting set up
+        # Getting set up # TODO check this and make it elegant LOW
         history = []
         Data = x_train.copy()
         sample_num = Data.shape[0]
@@ -116,14 +120,16 @@ class MyDNN:
                     'val_acc': None
                 }
                 if isinstance(self.loss, Entropy):
-                    history_val['acc'] = acc
-                    history_val['val_acc'] = val_acc
-                    print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} '
-                          f'-'f' acc: {acc} - val_loss: {val_loss} - val_acc: {val_acc}')
+                    if verbose is True:
+                        history_val['acc'] = acc
+                        history_val['val_acc'] = val_acc
+                        print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} '
+                              f'-'f' acc: {acc} - val_loss: {val_loss} - val_acc: {val_acc}')
 
                 else:
-                    print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} '
-                          f'- val_loss: {val_loss}')
+                    if verbose is True:
+                        print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} '
+                              f'- val_loss: {val_loss}')
                 history.append(history_val)
 
         # We are not given validation data
@@ -146,10 +152,12 @@ class MyDNN:
 
                 if isinstance(self.loss, Entropy):
                     history_val['acc'] = acc
-                    print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} -'
-                          f' acc: {acc}')
+                    if verbose is True:
+                        print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss} -'
+                              f' acc: {acc}')
                 else:
-                    print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss}')
+                    if verbose is True:
+                        print(f'Epoch {iteration} / {epochs + 1} - {round(toc - tic)} seconds - loss: {loss}')
 
                 history.append(history_val)
 
@@ -167,7 +175,7 @@ class MyDNN:
         """
 
         assert isinstance(data, np.ndarray), "Data should be an np.ndarry instance"
-        assert len(data.shape) == 2, "Data should be 2-diemsnional"
+        assert len(data.shape) == 2, "Data should be 2-dimensional"
 
         Data = data.T
         y_hat = self._forward(Data)
@@ -202,9 +210,13 @@ class MyDNN:
             acc = []
             loss = []
             for batch in range(0, sample_num, batch_size):
+                current_size = batch_size
+                # residual handling
+                if batch + batch_size > sample_num:
+                    current_size = sample_num - batch
                 # perform a forward pass only on the samples in this batch
-                loss_b, acc_b = self._eval_batch(Data[:, batch: batch_size + batch],
-                                                 Label[:, batch: batch_size + batch], sample_num)
+                loss_b, acc_b = self._eval_batch(Data[:, batch: current_size + batch],
+                                                 Label[:, batch: current_size + batch], sample_num)
                 acc.append(acc_b)
                 loss.append(loss_b)
             return self._check_return(np.mean(acc), np.sum(loss))
@@ -266,25 +278,27 @@ class MyDNN:
         batch_size = batch_size if batch_size < sample_num else sample_num
 
         for batch in range(0, sample_num, batch_size):
-
+            current_size = batch_size
+            # residual handling
+            if batch + batch_size > sample_num:
+                current_size = sample_num - batch
             # perform a forward pass only on the samples in this batch
-            y_hat = self._forward(shuffled_data[:, batch: batch_size + batch])
+            y_hat = self._forward(shuffled_data[:, batch: current_size + batch])
 
             # sum up the norms of the weights. Used for regularization.
             weights_norm_sum = 0
             # calculate the loss of the samples in this batch
-            self.loss.forward(y_hat, shuffled_labels[:, batch: batch_size + batch], sample_num)
+            self.loss.forward(y_hat, shuffled_labels[:, batch: current_size + batch], sample_num)
 
             # Begin back prop from the loss layer.
             for layer in self.layers:
                 weights_norm_sum += layer.weights_norm * layer.weight_decay
             # Update the weights and biases of each layer.
-            self._backward(self.loss.gradiant)
+            self._backward(self.loss.gradient)
 
             # Keep track of the error
-
             error.append(self.loss.error + weights_norm_sum * self.weight_decay)
-            diff = sum(np.argmax(y_hat, axis=0) == np.argmax(shuffled_labels[:, batch: batch_size + batch], axis=0))
+            diff = sum(np.argmax(y_hat, axis=0) == np.argmax(shuffled_labels[:, batch: current_size + batch], axis=0))
             acc.append(diff / y_hat.shape[1])
 
         return np.mean(acc), np.sum(error)

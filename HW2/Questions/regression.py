@@ -75,13 +75,15 @@ def create_data_sets():
     return result
 
 
-def surface_plot(matrix, **kwargs):
+def surface_plot(coor, values, **kwargs):
     # acquire the cartesian coordinate matrices from the matrix
     # x is cols, y is rows
-    (x, y) = np.meshgrid(np.arange(matrix.shape[0]), np.arange(matrix.shape[1]))
+    # (x, y) = np.meshgrid(np.arange(values.shape[0]), np.arange(values.shape[1]))
+    x = coor[:, 0].reshape([100, 100])
+    y = coor[:, 1].reshape([100, 100])
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    surf = ax.plot_surface(x, y, matrix, **kwargs)
+    surf = ax.plot_surface(x, y, values, **kwargs)
     return (fig, ax, surf)
 
 
@@ -99,24 +101,30 @@ if __name__ == "__main__":
     test = data_sets["test"]
     test_vals = data_sets["test_vals"]
 
-    # small_layers = [generate_layer(2, 25, "relu", "l2", 0.4), generate_layer(25, 1, "relu", "l2", 0.4)]
-    # small_net = mydnn.MyDNN(small_layers, "MSE", 5e-5)
+    # small_layers = [generate_layer(2, 25, "relu", "l2", 0.4),
+    #                 generate_layer(25, 1, "none", "l2", 0.4)]
+    # small_net = MyDNN(small_layers, "MSE", 5e-5)
     # log_s = small_net.fit(small, small_vals, 1_800, 512, 0.4)
     # plot_graphs(log_s)
-    big_layers = [generate_layer(2, 1000, "relu", "l2"),
-                  generate_layer(1000, 1, "none", "l2")
+    big_layers = [generate_layer(2, 1000, "relu", "l1"),
+                  generate_layer(1000, 100, "relu", "l1"),
+                  generate_layer(100, 1, "none", "l1"),
                   ]
-    big_net = MyDNN(big_layers, "MSE", 9e-5)
-    log_b = big_net.fit(big, big_vals, 600, 512, 0.5, big_validation, big_validation_vals)
+    big_net = MyDNN(big_layers, "MSE", 1e-9)
+
+    log_b = big_net.fit(big, big_vals, 600, 50, 0.4, big_validation, big_validation_vals)
     plot_graphs(log_b)
     # small_results = small_net.evaluate(test, test_vals)
     big_results = big_net.evaluate(test, test_vals)
 
-    y_hat_b = big_net.predict(test).reshape([100, 100])
-    fig, ax, surf = surface_plot(y_hat_b)
+    y_hat = big_net.predict(test).reshape([100, 100])
+    # y_hat = small_net.predict(test).reshape([100, 100])
+    fig, ax, surf = surface_plot(test, y_hat)
     ax.set_title('Prediction of Big net  f(x1,x2)')
+    # ax.set_title('Prediction of Small net  f(x1,x2)')
     plt.show()
     y_real = test_vals.reshape([100, 100])
-    fig, ax, surf = surface_plot(y_real)
+    fig, ax, surf = surface_plot(test, y_real)
     ax.set_title('Real Values f(x1,x2)')
     plt.show()
+    print("MSE Loss on test set: " + str(1/1000*np.sum(np.square(y_hat-y_real))))
