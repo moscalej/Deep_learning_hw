@@ -1,6 +1,6 @@
 from keras import layers
 from keras import models
-
+from keras.layers import *
 #
 # image dimensions
 #
@@ -84,7 +84,7 @@ def residual_network(x):
         return y
 
     # conv1
-    x = layers.Conv2D(96, kernel_size=(7, 7), strides=(2, 2), padding='same')(x)
+    x = layers.Conv2D(92, kernel_size=(7, 7), strides=(2, 2), padding='same')(x)
     x = add_common_layers(x)
 
     # conv2
@@ -110,9 +110,10 @@ def residual_network(x):
         x = residual_block(x, 32, 64, _strides=strides)
 
     x = layers.GlobalAveragePooling2D()(x)
-    x = layers.Dense(1)(x)
+    out = Activation('softmax')(Dense(10)(x))
+    # x = layers.Dense(1)(x)
 
-    return x
+    return out
 
 
 image_tensor = layers.Input(shape=(img_height, img_width, img_channels))
