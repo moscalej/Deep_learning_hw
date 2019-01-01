@@ -1,13 +1,24 @@
 from keras import layers
 from keras import models
+from keras.callbacks import ReduceLROnPlateau
+from keras.datasets import cifar10
 from keras.layers import *
+import keras
 #
 # image dimensions
 #
+# from tensorflow.python.estimator import keras
+from keras_preprocessing.image import ImageDataGenerator
 
 img_height = 32
 img_width = 32
 img_channels = 3
+num_classes = 10
+batch_size = 1024
+epochs = 30
+input_shape = [32, 32, 3]
+weight_decay = 4e-5
+
 
 #
 # network params
@@ -119,4 +130,78 @@ image_tensor = layers.Input(shape=(img_height, img_width, img_channels))
 network_output = residual_network(image_tensor)
 
 model = models.Model(inputs=[image_tensor], outputs=[network_output])
-print(model.summary())
+model.compile(loss=keras.losses.categorical_crossentropy,
+              optimizer=keras.optimizers.Adam(lr=0.002, beta_1=0.9, beta_2=0.999),
+              metrics=['accuracy'])
+model.summary()
+def run():
+    Tf_log = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW3\TF\Alex_net_v2'
+    Model_save_p =r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW3\saved_models\Alex_net_v2.h5'
+    (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+
+    x_train = K.cast_to_floatx(x_train) / 255
+    x_train = x_train.reshape(-1, 32, 32, 3)
+
+    x_test = K.cast_to_floatx(x_test) / 255
+    x_test = x_test.reshape(-1, 32, 32, 3)
+
+    y_train = keras.utils.to_categorical(y_train, num_classes)
+    y_test = keras.utils.to_categorical(y_test, num_classes)
+
+    def normalize(X_train, X_test):
+        mean = np.mean(X_train, axis=(0, 1, 2, 3))
+        std = np.std(X_train, axis=(0, 1, 2, 3))
+        X_train = (X_train - mean) / (std + 1e-7)
+        X_test = (X_test - mean) / (std + 1e-7)
+        return X_train, X_test
+
+    x_train, x_test = normalize(x_train, x_test)
+
+    img = ImageDataGenerator(featurewise_center=False,
+                             samplewise_center=False,
+                             featurewise_std_normalization=False,
+                             samplewise_std_normalization=False,
+                             zca_whitening=False,
+                             zca_epsilon=1e-06,
+                             rotation_range=0.15,
+                             width_shift_range=0.15,
+                             height_shift_range=0.15,
+                             brightness_range=None,
+                             shear_range=0.0,
+                             zoom_range=0.1,
+                             channel_shift_range=0.0,
+                             fill_mode='nearest',
+                             cval=0.0,
+                             horizontal_flip=True,
+                             vertical_flip=True,
+                             rescale=None,
+                             preprocessing_function=None,
+                             data_format=None,
+                             validation_split=0.)
+
+    img.fit(x_test)
+
+    tbCallBack = keras.callbacks.TensorBoard(log_dir=Tf_log,
+                                             histogram_freq=0,
+                                             batch_size=32,
+                                             write_graph=True,
+                                             write_grads=True,
+                                             write_images=True,
+                                             embeddings_freq=0,
+                                             embeddings_layer_names=None,
+                                             embeddings_metadata=None)
+    reduce_lr = ReduceLROnPlateau(monitor='loss',
+                                  factor=0.5,
+                                  patience=2,
+                                  min_lr=0.000001,
+                                  embeddings_layer_names=None,
+                                  embeddings_metadata=None)
+
+    history_fully = model.fit_generator(img.flow(x_train, y_train, batch_size=1024),
+                                        steps_per_epoch=48,
+                                        shuffle=True,
+                                        epochs=150,
+                                        initial_epoch=0,
+                                        validation_data=(x_test, y_test), callbacks=[tbCallBack, reduce_lr])
+    model.save(Model_save_p)
+    return history_fully

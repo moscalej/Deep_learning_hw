@@ -12,6 +12,7 @@ from keras.layers import *
 from keras.models import Model
 from keras.layers import Input, Dense
 import keras
+from keras_preprocessing.image import ImageDataGenerator
 
 num_classes = 10
 batch_size = 1024
@@ -21,14 +22,14 @@ weight_decay = 4e-5
 
 
 def block_1(x, size):
-    layer_0 = Conv2D(size, (3, 3), padding='same')(x)
+    layer_0 = Conv2D(size, (3, 3), padding='same',kernel_regularizer=keras.regularizers.l2(weight_decay))(x)
     layer_2 = BatchNormalization()(layer_0)
     layer_3 = Activation('relu')(layer_2)
     return (layer_3)
 
 
 def block_2(x, size):
-    layer_0 = Conv2D(size, (1, 1), padding='same')(x)
+    layer_0 = Conv2D(size, (1, 1), padding='same',kernel_regularizer=keras.regularizers.l2(weight_decay))(x)
     layer_2 = BatchNormalization()(layer_0)
     layer_3 = Activation('relu')(layer_2)
     return (layer_3)
@@ -58,15 +59,17 @@ soft_max = Dense(10, activation='softmax')(enbede)
 model = Model(inputs=input_net, outputs=soft_max)
 
 model.compile(loss=keras.losses.categorical_crossentropy,
-              optimizer=keras.optimizers.Adam(lr=0.002, beta_1=0.9, beta_2=0.999),
+              optimizer=keras.optimizers.Adam(lr=0.01, beta_1=0.9, beta_2=0.999),
               metrics=['accuracy'])
 model.summary()
 
 
 def run():
-    Tf_log = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW3\TF'
+    Tf_log = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW3\TF\finkMos_2'
     Model_save_p =r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW3\saved_models\finkmos'
     (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+
+
 
     x_train = K.cast_to_floatx(x_train) / 255
     x_train = x_train.reshape(-1, 32, 32, 3)
@@ -86,6 +89,29 @@ def run():
 
     x_train, x_test = normalize(x_train, x_test)
 
+    img = ImageDataGenerator(featurewise_center=False,
+                             samplewise_center=False,
+                             featurewise_std_normalization=False,
+                             samplewise_std_normalization=False,
+                             zca_whitening=False,
+                             zca_epsilon=1e-06,
+                             rotation_range=0.15,
+                             width_shift_range=0.15,
+                             height_shift_range=0.15,
+                             brightness_range=None,
+                             shear_range=0.0,
+                             zoom_range=0.1,
+                             channel_shift_range=0.0,
+                             fill_mode='nearest',
+                             cval=0.0,
+                             horizontal_flip=True,
+                             vertical_flip=True,
+                             rescale=None,
+                             preprocessing_function=None,
+                             data_format=None,
+                             validation_split=0.)
+
+    img.fit(x_test)
 
     tbCallBack = keras.callbacks.TensorBoard(log_dir=Tf_log,
                                              histogram_freq=0,
@@ -103,9 +129,11 @@ def run():
                                   embeddings_layer_names=None,
                                   embeddings_metadata=None)
 
-    history_fully = model.fit(x_train, y_train,
-                              epochs=50, batch_size=1024,
-                              validation_data=(x_test, y_test), callbacks=[tbCallBack, reduce_lr])
+    history_fully = model.fit_generator(img.flow(x_train, y_train, batch_size=1024),
+                                        steps_per_epoch=48,
+                                        shuffle=True,
+                                        epochs=150,
+                                        initial_epoch=0,
+                                        validation_data=(x_test, y_test), callbacks=[tbCallBack, reduce_lr])
     model.save(Model_save_p)
     return history_fully
-
