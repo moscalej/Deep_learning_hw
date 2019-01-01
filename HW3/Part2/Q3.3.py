@@ -1,6 +1,8 @@
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+
 import keras
-from keras.datasets import cifar100
-from keras.datasets import cifar10
+from keras.datasets import cifar100, cifar10
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
@@ -11,11 +13,12 @@ from keras import regularizers
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from Code.Preproces import preproces_cfar10
-# from tqdm import tqdm
+from tqdm import tqdm
+import seaborn as sns
+sns.set_style("dark")
 
 import pandas as pd
-
-
+import matplotlib.pyplot as plt
 class cifar100vgg:
     def __init__(self, train=True):
         self.num_classes = 100
@@ -27,7 +30,7 @@ class cifar100vgg:
             self.model = self.train(self.model)
         else:
             self.model.load_weights(
-                r'C:\Users\afinkels\Desktop\private\Technion\Master studies\Deep Learning\HW\hw_repo\Deep_learning_hw\HW3\cifar100vgg_original.h5')
+                r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW3\Part2\cifar100vgg.h5')
 
     def build_model(self):
         # Build the network of vgg for 10 classes with massive dropout and weight decay as described in the paper.
@@ -145,24 +148,23 @@ class cifar100vgg:
             x = self.normalize_production(x)
         return self.model.predict(x, batch_size)
 
-    def train(self, model, x_train, y_train, x_test, y_test):
+    def train(self, model):
 
         # training parameters
-        batch_size = 100
+        batch_size = 128
         maxepoches = 250
         learning_rate = 0.1
         lr_decay = 1e-6
         lr_drop = 20
 
         # The data, shuffled and split between train and test sets:
-        # (x_train, y_train), (x_test, y_test) = cifar10.load_data()
-
+        (x_train, y_train), (x_test, y_test) = cifar100.load_data()
         x_train = x_train.astype('float32')
         x_test = x_test.astype('float32')
         x_train, x_test = self.normalize(x_train, x_test)
 
-        # y_train = keras.utils.to_categorical(y_train, self.num_classes)
-        # y_test = keras.utils.to_categorical(y_test, self.num_classes)
+        y_train = keras.utils.to_categorical(y_train, self.num_classes)
+        y_test = keras.utils.to_categorical(y_test, self.num_classes)
 
         def lr_scheduler(epoch):
             return learning_rate * (0.5 ** (epoch // lr_drop))
@@ -194,50 +196,39 @@ class cifar100vgg:
                                                        batch_size=batch_size),
                                           steps_per_epoch=x_train.shape[0] // batch_size,
                                           epochs=maxepoches,
-                                          validation_data=(x_test, y_test), callbacks=[], verbose=2)
-        # validation_data=(x_test, y_test), callbacks=[reduce_lr], verbose=2)
-        model.save_weights('cifar100vgg_new.h5')
+                                          validation_data=(x_test, y_test), callbacks=[reduce_lr], verbose=2)
+        model.save_weights('cifar100vgg.h5')
         return model
 
 
 x_train, x_test, y_train, y_test = preproces_cfar10()
+clf = cifar100vgg(train=False)
+model = clf.model
 
-# VGG_x_test = clf.train(x_train, normalize=False)
-# y_test = np.argmax(y_test, 1)
-results = pd.DataFrame(columns=[100, 1_000, 10_000])
+for _ in range(5):
+    model.layers.pop()
+    model.outputs = [model.layers[-1].output]
+    model.layers[-1].outbound_nodes = []
 
-for ind, train_size in enumerate(results.columns):
-    clf = cifar100vgg(train=False)
-    clf.num_classes = 10
-    model = clf.model
-    ## remove last part of cifar100vgg
-    for _ in range(5):
-        model.layers.pop()
-        model.outputs = [model.layers[-1].output]
-        model.layers[-1].outbound_nodes = []
+for layer in model.layers:
+    layer.trainable = False
 
-    ## freeze layers
-    for layer in model.layers:
-        layer.trainable = False
+VGG_x_test = clf.predict(x_test, normalize=False)
+y_test = np.argmax(y_test, 1)
+results_rf = pd.DataFrame(columns=[100, 1_000, 10_000])
 
-    ## add new layers for training
-    model.add(Activation('relu'))
-    model.add(BatchNormalization())
-    model.add(Dropout(0.5))
-    model.add(Dense(10))
-    model.add(Activation('softmax'))
-    model.compile(loss=keras.losses.categorical_crossentropy,
-                  optimizer=keras.optimizers.Adam(lr=0.002, beta_1=0.9, beta_2=0.999),
-                  metrics=['accuracy'])
-    X_train_small, _, y_train_small, _ = train_test_split(
-        x_train, y_train, train_size=train_size, test_size=0.0,
-        random_state=42)
-    clf.train(model, X_train_small, y_train_small, x_test, y_test)
 
-    y_hat = clf.predict(x_test, normalize=True)
-    acc = 0
-    y_test = np.argmax(y_test, 1)
-    y_hat = np.argmax(y_hat, 1)
-    acc = np.mean(y_hat == y_test)
-    print(y_hat)
-    results.loc[ind, train_size] = acc
+
+for train_size in results_rf.columns:
+    for estimators in tqdm(range(10, 60, 10)):
+        X_train_small, _, y_train_small, _ = train_test_split(
+            x_train, y_train, train_size=train_size, test_size=0.0,
+            random_state=42)
+
+        y_train_small = np.argmax(y_train_small, 1)
+
+        VGG_x_train_small = clf.predict(X_train_small,normalize=False)
+
+        neigh = RandomForestClassifier(n_estimators=estimators, n_jobs=-1)
+        neigh.fit(VGG_x_train_small, y_train_small)
+        results_rf.loc[estimators, train_size] = neigh.score(VGG_x_test, y_test)
