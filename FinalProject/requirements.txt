@@ -1,2 +1,0 @@
-numpy               # array and matrix manipulation
-keras               # DNN frame work
