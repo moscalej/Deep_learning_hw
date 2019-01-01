@@ -95,7 +95,7 @@ def residual_network(x):
         return y
 
     # conv1
-    x = layers.Conv2D(92, kernel_size=(7, 7), strides=(2, 2), padding='same')(x)
+    x = layers.Conv2D(94, kernel_size=(7, 7), strides=(2, 2), padding='same')(x)
     x = add_common_layers(x)
 
     # conv2
