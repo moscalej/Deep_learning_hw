@@ -111,7 +111,6 @@ def residual_network(x):
 
     x = layers.GlobalAveragePooling2D()(x)
     out = Activation('softmax')(Dense(10)(x))
-    # x = layers.Dense(1)(x)
 
     return out
 
