@@ -21,7 +21,7 @@ num_classes = 10
 batch_size = 1024
 epochs = 30
 input_shape = [32, 32, 3]
-weight_decay = 1e-5
+weight_decay = 2e-5
 
 
 def fire_module(x, squeeze=10, expand=20):
@@ -34,14 +34,14 @@ def fire_module(x, squeeze=10, expand=20):
             out_layer = LeakyReLU()(out_layer)
             return out_layer
 
-        # out_layer = Conv2D(squeeze, (1, 1), padding='same',
-        #                    kernel_regularizer=keras.regularizers.l2(weight_decay))(input)
-        # out_layer = BatchNormalization()(out_layer)
-        # out_layer = LeakyReLU()(out_layer)
+        out_layer = Conv2D(squeeze, (1, 1), padding='same',
+                           kernel_regularizer=keras.regularizers.l2(weight_decay))(input)
+        out_layer = BatchNormalization()(out_layer)
+        out_layer = LeakyReLU()(out_layer)
 
         out_layer = Conv2D(expand, (kernel_size, 1), # todo try to reduce 1x1
                            kernel_regularizer=keras.regularizers.l2(weight_decay),
-                           padding='same', )(x)
+                           padding='same', )(out_layer)
         out_layer = BatchNormalization()(out_layer)
         out_layer = LeakyReLU()(out_layer)
 
@@ -57,7 +57,7 @@ def fire_module(x, squeeze=10, expand=20):
     left_2 = convolution(x, 3)
 
     # Avrage Pulling
-    left_3 = AveragePooling2D(pool_size=(2, 2), padding='same', strides=(1, 1))(x)
+    left_3 = MaxPool2D(pool_size=(2, 2), padding='same', strides=(1, 1))(x)
     left_3 = Conv2D(expand, (1, 1), padding='same')(left_3)
     left_3 = LeakyReLU()(left_3)
 
@@ -68,31 +68,31 @@ def fire_module(x, squeeze=10, expand=20):
     return x
 
 
-def mul_fire(x, res=None, squeeze=10, expand=10, dim_out=40):
+def mul_fire(x,  squeeze=10, expand=10, dim_out=40):
     x_1 = fire_module(x, squeeze=squeeze, expand=expand)
     x_1 = fire_module(x_1, squeeze=squeeze, expand=expand)
-    # out = multiply([x_1,x])
-    # left_3 = Conv2D(dim_out, (1, 1), padding='same')(out)
-    # left_3 = BatchNormalization()(left_3)
-    # left_3 = LeakyReLU()(left_3)
+    out = add([x_1,x])
+    left_3 = Conv2D(dim_out, (1, 1), padding='same')(out)
+    left_3 = BatchNormalization()(left_3)
+    left_3 = LeakyReLU()(left_3)
 
-    return x_1
+    return left_3
 
 
 def multi_nice(conv0, squeeze=10, expand=10,dim_out=40):
     multi_1 = mul_fire(conv0, squeeze=squeeze, expand=expand,dim_out=dim_out)
-    multi_2 = mul_fire(multi_1, squeeze=squeeze-2, expand=expand,dim_out=dim_out)
+    multi_2 = mul_fire(multi_1, squeeze=squeeze, expand=expand,dim_out=dim_out)
 
     return multi_2
 
 
 
 def Start_block(input):
-    conv0 = Activation('tanh')(Conv2D(8, (5, 5),
+    conv0 = Activation('tanh')(Conv2D(12, (3, 3),
                                       kernel_regularizer=keras.regularizers.l2(1.35 * weight_decay))(input))
-    conv1 = LeakyReLU()(BatchNormalization()((Conv2D(16, (3, 3), strides=(1, 1),
+    conv1 = LeakyReLU()(BatchNormalization()((Conv2D(32, (3, 3), strides=(1, 1),
                                                      kernel_regularizer=keras.regularizers.l2(weight_decay))(conv0))))
-    return mul_fire(conv1, res=conv1, squeeze=7, expand=5)
+    return mul_fire(conv1, squeeze=8, expand=8,dim_out=32)
 
 
 
@@ -101,9 +101,9 @@ input = Input(input_shape)
 
 conv0 = Start_block(input)
 pull_1 = MaxPool2D()(conv0)
-super_2 = multi_nice(pull_1, squeeze=8, expand=6,dim_out=16)
+super_2 = multi_nice(pull_1, squeeze=16, expand=8,dim_out=32)
 pull_2 = MaxPool2D()(super_2)
-super_3 = multi_nice(pull_2, squeeze=16, expand=12,dim_out=32)
+super_3 = multi_nice(pull_2, squeeze=16, expand=8,dim_out=32)
 pull_3 = MaxPool2D()(super_3)
 # super_4 =Conv2D(64,(3,3),activation='relu')(pull_3)
 
@@ -119,9 +119,9 @@ model.compile(loss=keras.losses.categorical_crossentropy,
 model.summary()
 
 
-def run():
-    Tf_log = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW3\TF\Super_optimize_4'
-    Model_save_p = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW3\saved_models\Super_optimize_4.h5'
+def run(epochs ,initial_epoch):
+    Tf_log = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW3\TF\Final_network'
+    Model_save_p = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW3\saved_models\Final_network.h5'
     (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
     x_train = K.cast_to_floatx(x_train) / 255
@@ -174,16 +174,16 @@ def run():
                                              embeddings_layer_names=None,
                                              embeddings_metadata=None)
     reduce_lr = ReduceLROnPlateau(monitor='loss',
-                                  factor=0.6,
-                                  patience=4,
-                                  min_lr=0.00000001,
+                                  factor=0.57,
+                                  patience=6,
+                                  min_lr=0.000001,
                                   embeddings_layer_names=None,
                                   embeddings_metadata=None)
 
     history_fully = model.fit_generator(img.flow(x_train, y_train, batch_size=1024), steps_per_epoch=48,
                                         shuffle=True,
-                                        epochs=1,
-                                        initial_epoch=0,
+                                        epochs=epochs,
+                                        initial_epoch=initial_epoch,
                                         validation_data=(x_test, y_test), callbacks=[tbCallBack, reduce_lr])
     model.save(Model_save_p)
     return history_fully

@@ -21,7 +21,7 @@ dim_plus = Integer(low=0, high=1, name='plus')
 
 ## dimensions to explore:
 dimensions = [
-    weight_decay,
+    weight_decay,#8e-2
     dim_epocs,
     dim_factor,
     dim_patience,
@@ -49,6 +49,6 @@ def uno(weight_decay=1e-5 ,epochs=30,factor=0.6 , patience=2, s_1=7,ex_1=10,s_2=
 search_result = gp_minimize(func=uno,
                             dimensions=dimensions,
                             acq_func='EI',  # Expected Improvement.
-                            n_calls=11,
+                            n_calls=200,
                             # x0=defult
                             )
