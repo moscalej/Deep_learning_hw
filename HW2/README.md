@@ -1,10 +1,12 @@
 
-Authors :       Alex Finkelshtein : 307573378
-                Alejandro Moscoso : 332336908
+# Alex Finkelshtein : 307573378  Alejandro Moscoso : 332336908
 
 HW2:            github:  https://github.com/moscalej/Deep_learning_hw
 
-Files:          report.pdf
+Files:
+
+                report.pdf
+
                 Layer.py
                 Macros.py
                 mydnn.py

@@ -2,7 +2,7 @@ import pickle
 import gzip
 import urllib.request
 from sklearn.preprocessing import scale
-from mydnn import MyDNN
+from mydnn import mydnn
 from Macros import generate_layer, plot_graphs, one_hot
 import pickle
 import os
@@ -36,7 +36,7 @@ for depht in [3]:
 
 log = {}
 for arch_k in arch.keys():
-    net = MyDNN(arch[arch_k], "cross-entropy", 5e-5)
+    net = mydnn(arch[arch_k], "cross-entropy", 5e-5)
     log[arch_k] = net.fit(training_samples, training_classifications, 200, 1024, 0.2, validation_samples,
                           validation_classifications)
 pickle.dump(log, open(f'..\\LOG\\\\Log_first_arch.p', 'wb'))

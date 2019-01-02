@@ -15,7 +15,7 @@ from keras.layers import *
 from keras.models import Model, load_model
 from keras.layers import Input, Dense
 import keras
-from keras_preprocessing.image import ImageDataGenerator
+from keras import ImageDataGenerator
 
 num_classes = 10
 batch_size = 1024

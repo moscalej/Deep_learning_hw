@@ -2,7 +2,7 @@ import pickle
 import gzip
 import urllib.request
 from sklearn.preprocessing import scale
-from mydnn import MyDNN
+from mydnn import mydnn
 from Macros import generate_layer, one_hot, plot_graphs
 
 
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     layers.append(generate_layer(254, 128, "relu", "l2"))
     layers.append(generate_layer(128, 10, "softmax", "l2"))
 
-    net = MyDNN(layers, "cross-entropy", 5e-5)  # MSE
+    net = mydnn(layers, "cross-entropy", 5e-5)  # MSE
     log = net.fit(training_samples, training_classifications, 50, 2048, 0.8, validation_samples,
                   validation_classifications)
     plot_graphs(log)

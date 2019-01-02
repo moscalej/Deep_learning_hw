@@ -11,7 +11,7 @@ from Nodes import Entropy
 # CORE DNN CLASS ###
 ######################
 
-class MyDNN:
+class mydnn:
     def __init__(self, architecture, loss, weight_decay=0.):
         """
         :param architecture: A list of dictionaries used to initialize Layer objects
@@ -119,6 +119,7 @@ class MyDNN:
                     'val_loss': val_loss,
                     'val_acc': None
                 }
+                self._update_learning_rate()
                 if isinstance(self.loss, Entropy):
                     if verbose is True:
                         history_val['acc'] = acc
@@ -149,7 +150,7 @@ class MyDNN:
                     val_loss=None,
                     val_acc=None,
                 )
-
+                self._update_learning_rate()
                 if isinstance(self.loss, Entropy):
                     history_val['acc'] = acc
                     if verbose is True:
@@ -302,6 +303,10 @@ class MyDNN:
             acc.append(diff / y_hat.shape[1])
 
         return np.mean(acc), np.sum(error)
+
+    def _update_learning_rate(self):
+        for layer in self.layers:
+            layer.update_learning_rate()
 
     def _test(self, Data, Label):
         """

@@ -27,7 +27,7 @@ class cifar100vgg:
             self.model = self.train(self.model)
         else:
             self.model.load_weights(
-                r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW3\Part2\cifar100vgg.h5')
+                r'D:\Ale\Documents\Technion\Deep Learning\DL_HW\HW3\Part2\cifar100vgg.h5')
 
     def build_model(self):
         # Build the network of vgg for 10 classes with massive dropout and weight decay as described in the paper.
@@ -213,7 +213,7 @@ for layer in model.layers:
 VGG_x_test = clf.predict(x_test, normalize=False)
 y_test = np.argmax(y_test, 1)
 results = pd.DataFrame(columns=[100, 1_000, 10_000])
-
+# %%
 for train_size in results.columns:
     #loeading the data according to the Homework
     X_train_small, _, y_train_small, _ = train_test_split(
@@ -224,7 +224,7 @@ for train_size in results.columns:
     for n_neighbors in tqdm(range(1, 50, 5)):
         VGG_x_train_small = clf.predict(X_train_small, normalize=False)
 
-        neigh = KNeighborsClassifier(n_neighbors=n_neighbors, n_jobs=-1)
+        neigh = KNeighborsClassifier(n_neighbors=n_neighbors, weights='distance', n_jobs=-1)
         # train KNN from output of VGG 512 layer:
         neigh.fit(VGG_x_train_small, y_train_small)
         results.loc[n_neighbors, train_size] = neigh.score(VGG_x_test, y_test)

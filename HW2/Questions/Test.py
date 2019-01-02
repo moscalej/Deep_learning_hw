@@ -2,7 +2,7 @@ import pickle
 import gzip
 import urllib.request
 from sklearn.preprocessing import scale
-from mydnn import MyDNN
+from mydnn import mydnn
 from Macros import generate_layer, plot_graphs, one_hot
 import pickle
 import os
@@ -24,7 +24,7 @@ layers = [generate_layer(num_pixels, 128, "relu", "l2")]
 layers.append(generate_layer(128, 10, "softmax", "l2"))
 log = {}
 for batch in [128, 1024, 6e5]:
-    net = MyDNN(layers, "cross-entropy")
+    net = mydnn(layers, "cross-entropy")
     log[batch] = net.fit(training_samples, training_classifications, 100, batch, 0.4, validation_samples,
                          validation_classifications)
 pickle.dump(log, open(f'{log_path}\\Log_first.p', 'wb'))
@@ -43,7 +43,7 @@ layers = [generate_layer(num_pixels, 128, "relu", "l1")]
 layers.append(generate_layer(128, 10, "softmax", "l1"))
 log = {}
 for weight in [5e-4]:
-    net = MyDNN(layers, "cross-entropy", weight)
+    net = mydnn(layers, "cross-entropy", weight)
     log[-round(np.log10(weight))] = net.fit(training_samples, training_classifications, 200, 1024, 0.4,
                                             validation_samples, validation_classifications)
 
@@ -64,7 +64,7 @@ layers = [generate_layer(num_pixels, 128, "relu", "l2", 0.2)]
 layers.append(generate_layer(128, 10, "softmax", "l2", 0.2))
 log = {}
 for weight in [5e-5, 5e-4, 5e-3]:
-    net = MyDNN(layers, "cross-entropy", weight)
+    net = mydnn(layers, "cross-entropy", weight)
     log[-round(np.log10(weight))] = net.fit(training_samples, training_classifications, 100, 1024, 0.2,
                                             validation_samples, validation_classifications)
 pickle.dump(log, open(f'{log_path}\\Log_first_l2.p', 'wb'))

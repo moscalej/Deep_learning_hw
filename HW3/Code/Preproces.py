@@ -23,7 +23,7 @@ IMAGE_CHANNELS = 3
 ######################
 ### PRE PROCESSING ###
 ######################
-def preproces_cfar10():
+def preproces_cfar10(normalize=True):
     (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
     # X dimensions should be:
@@ -45,14 +45,15 @@ def preproces_cfar10():
     y_train = keras.utils.to_categorical(y_train, num_classes)
     y_test = keras.utils.to_categorical(y_test, num_classes)
 
-    def normalize(X_train, X_test):
+    def normalized(X_train, X_test):
         mean = np.mean(X_train, axis=(0, 1, 2, 3))
         std = np.std(X_train, axis=(0, 1, 2, 3))
         X_train = (X_train - mean) / (std + 1e-7)
         X_test = (X_test - mean) / (std + 1e-7)
+        print(f'Mean: {mean} ,Std: {std}')
         return X_train, X_test
 
-    x_train, x_test = normalize(x_train, x_test)
+    x_train, x_test = normalized(x_train, x_test) if normalize else (x_train, x_test)
 
     print(x_train.shape, y_train.shape)
     print(x_test.shape, y_test.shape)

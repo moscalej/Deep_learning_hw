@@ -25,7 +25,7 @@ class cifar100vgg:
             self.model = self.train(self.model)
         else:
             self.model.load_weights(
-                r'C:\Users\afinkels\Desktop\private\Technion\Master studies\Deep Learning\HW\hw_repo\Deep_learning_hw\HW3\cifar100vgg_original.h5')
+                r'D:\Ale\Documents\Technion\Deep Learning\DL_HW\HW3\Part2\cifar100vgg.h5')
 
     def build_model(self):
         # Build the network of vgg for 10 classes with massive dropout and weight decay as described in the paper.
@@ -221,11 +221,15 @@ for layer in model_100.layers:
 model_100.compile(loss=keras.losses.categorical_crossentropy,
                      optimizer=keras.optimizers.Adam(lr=0.002, beta_1=0.9, beta_2=0.999),
                      metrics=['accuracy'])
+results_2 = pd.DataFrame()
+# %%
+
 for ind, train_size in enumerate(results.columns):
     # get train set
     X_train_small, _, y_train_small, _ = train_test_split(
         x_train, y_train, train_size=train_size, test_size=0.0,
         random_state=42)
+
     # get model 100 output:
     model_10_input = model_100.predict(X_train_small)
     model_10_input_val = model_100.predict(x_test)
@@ -251,10 +255,10 @@ for ind, train_size in enumerate(results.columns):
     #                     validation_data=(x_test, y_test), callbacks=[reduce_lr, tbCallBack])
     model_10_input_test = model_100.predict(x_test)
     y_hat = model_10.predict(model_10_input_test)
-    y_test = np.argmax(y_test, 1)
+    y_test_arg = np.argmax(y_test, 1)
     y_hat = np.argmax(y_hat, 1)
-    acc = np.mean(y_hat == y_test)
+    acc = np.mean(y_hat == y_test_arg)
     # print(y_hat)
-    results.loc[ind, train_size] = acc
+    results_2.loc[train_size] = acc
 # results = results.astype(np.float32)
 # sns.heatmap(results,annot=True)

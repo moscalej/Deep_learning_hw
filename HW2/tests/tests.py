@@ -1,8 +1,6 @@
-import unittest
 from Nodes import *
-import numpy as np
 from Layer import *
-from mydnn import MyDNN
+from mydnn import mydnn
 from Macros import *
 
 class NodesTest(unittest.TestCase):
@@ -163,7 +161,7 @@ class Dnn_test(unittest.TestCase):
         big_layers = [generate_layer(4, 100, "none", "l1"),
                       generate_layer(100, 2, "none", "l1"),
                       ]
-        big_net = MyDNN(big_layers, "MSE", 1e-9, verbose=False)
+        big_net = mydnn(big_layers, "MSE", 1e-9, verbose=False)
         big_net.fit(x.T, labels.T, 1000, 1, 0.2, x.T, labels.T)
         total = big_net.predict(x.T)
         print(labels)
@@ -182,7 +180,7 @@ class Dnn_test(unittest.TestCase):
         big_layers = [generate_layer(4, 100, "none", "l2"),
                       generate_layer(100, 2, "none", "l2"),
                       ]
-        big_net = MyDNN(big_layers, "MSE", 1e-5)
+        big_net = mydnn(big_layers, "MSE", 1e-5)
         big_net.fit(x.T, labels.T, 1000, 1, 0.2, x.T, labels.T, verbose=False)
         total = big_net.predict(x.T)
         print(labels)
@@ -201,7 +199,7 @@ class Dnn_test(unittest.TestCase):
         big_layers = [generate_layer(4, 100, "relu", "l2"),
                       generate_layer(100, 2, "none", "l2"),
                       ]
-        big_net = MyDNN(big_layers, "MSE", 1e-4)
+        big_net = mydnn(big_layers, "MSE", 1e-4)
         big_net.fit(x.T, labels.T, 1000, 1, 0.2, x.T, labels.T, verbose=False)
         total = big_net.predict(x.T)
         print('')
