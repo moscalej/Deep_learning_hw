@@ -1,7 +1,7 @@
 """
 
 #           #           #           #
-# Authors:  Alejandro Moscoso <alejandro.moscoso@intel.com>
+# Authors:  Alejandro Moscoso
 #
 #
 """
@@ -187,3 +187,7 @@ def run(epochs ,initial_epoch):
                                         validation_data=(x_test, y_test), callbacks=[tbCallBack, reduce_lr])
     model.save(Model_save_p)
     return history_fully
+
+
+if __name__ == '__main__':
+    run(250, 0)
