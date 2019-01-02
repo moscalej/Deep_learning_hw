@@ -3,17 +3,13 @@ from keras.datasets import cifar100
 from keras.datasets import cifar10
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten
+from keras.layers import Dense, Dropout, Activation, Flatten, concatenate
 from keras.layers import Conv2D, MaxPooling2D, BatchNormalization
 from keras import optimizers
 import numpy as np
 from keras import regularizers
 from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
 from Code.Preproces import preproces_cfar10
-# from tqdm import tqdm
-import seaborn as sns
-sns.set_style("dark")
 
 import pandas as pd
 
@@ -29,7 +25,7 @@ class cifar100vgg:
             self.model = self.train(self.model)
         else:
             self.model.load_weights(
-                r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW3\Part2\cifar100vgg.h5')
+                r'C:\Users\afinkels\Desktop\private\Technion\Master studies\Deep Learning\HW\hw_repo\Deep_learning_hw\HW3\cifar100vgg_original.h5')
 
     def build_model(self):
         # Build the network of vgg for 10 classes with massive dropout and weight decay as described in the paper.
@@ -208,40 +204,57 @@ x_train, x_test, y_train, y_test = preproces_cfar10()
 # y_test = np.argmax(y_test, 1)
 results = pd.DataFrame(columns=[100, 1_000, 10_000])
 
+## load cifar 100
+clf = cifar100vgg(train=False)
+clf.num_classes = 10
+model_100 = clf.model
+## remove last part of cifar100vgg
+for _ in range(5):
+    model_100.layers.pop()
+    model_100.outputs = [model_100.layers[-1].output]
+    model_100.layers[-1].outbound_nodes = []
+
+## freeze layers
+for layer in model_100.layers:
+    layer.trainable = False
+
+model_100.compile(loss=keras.losses.categorical_crossentropy,
+                     optimizer=keras.optimizers.Adam(lr=0.002, beta_1=0.9, beta_2=0.999),
+                     metrics=['accuracy'])
 for ind, train_size in enumerate(results.columns):
-    clf = cifar100vgg(train=False)
-    clf.num_classes = 10
-    model = clf.model
-    ## remove last part of cifar100vgg
-    for _ in range(5):
-        model.layers.pop()
-        model.outputs = [model.layers[-1].output]
-        model.layers[-1].outbound_nodes = []
-
-    ## freeze layers
-    for layer in model.layers:
-        layer.trainable = False
-
-    ## add new layers for training
-    model.add(Activation('relu'))
-    model.add(BatchNormalization())
-    model.add(Dropout(0.5))
-    model.add(Dense(10))
-    model.add(Activation('softmax'))
-    model.compile(loss=keras.losses.categorical_crossentropy,
-                  optimizer=keras.optimizers.Adam(lr=0.002, beta_1=0.9, beta_2=0.999),
-                  metrics=['accuracy'])
+    # get train set
     X_train_small, _, y_train_small, _ = train_test_split(
         x_train, y_train, train_size=train_size, test_size=0.0,
         random_state=42)
-    clf.train(model, X_train_small, y_train_small, x_test, y_test)
+    # get model 100 output:
+    model_10_input = model_100.predict(X_train_small)
+    model_10_input_val = model_100.predict(x_test)
+    # add new layers for training as an independent model
+    model_10 = Sequential()
+    model_10.add(Activation('relu', input_shape=model_10_input.shape[1:]))
+    model_10.add(BatchNormalization())
+    model_10.add(Dropout(0.5))
+    model_10.add(Dense(10))
+    model_10.add(Activation('softmax'))
+    ##
+    model_10.compile(loss=keras.losses.categorical_crossentropy,
+                     optimizer=keras.optimizers.Adam(lr=0.002, beta_1=0.9, beta_2=0.999),
+                     metrics=['accuracy'])
 
-    y_hat = clf.predict(x_test, normalize=True)
+    model_10.fit(model_10_input, y_train_small, validation_data=(model_10_input_val, y_test), epochs=100, batch_size=100)
+    # sequential feeding of model_100 to model_10
+    # clf.train(model_10, model_10_input, y_train_small, x_test, y_test)
+    # model_10.fit_generator(img.flow(x_train, y_train, batch_size=1024), steps_per_epoch=48,
+    #                     shuffle=True,
+    #                     epochs=epochs,
+    #                     initial_epoch=0,
+    #                     validation_data=(x_test, y_test), callbacks=[reduce_lr, tbCallBack])
+    model_10_input_test = model_100.predict(x_test)
+    y_hat = model_10.predict(model_10_input_test)
     y_test = np.argmax(y_test, 1)
     y_hat = np.argmax(y_hat, 1)
     acc = np.mean(y_hat == y_test)
-    print(y_hat)
+    # print(y_hat)
     results.loc[ind, train_size] = acc
-results = results.astype(np.float32)
-sns.heatmap(results,annot=True)
-plt.show()
+# results = results.astype(np.float32)
+# sns.heatmap(results,annot=True)

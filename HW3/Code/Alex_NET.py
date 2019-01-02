@@ -38,10 +38,10 @@ def residual_network(x):
         y = layers.LeakyReLU()(y)
         return y
 
-    def grouped_convolution(y, nb_channels, _strides):
+    def grouped_convolution(y, nb_channels):
         # when `cardinality` == 1 this is just a standard convolution
         if cardinality == 1:
-            return layers.Conv2D(nb_channels, kernel_size=(3, 3), strides=_strides, padding='same')(y)
+            return layers.Conv2D(nb_channels, kernel_size=(3, 3), strides=(1,1), padding='same')(y)
 
         assert not nb_channels % cardinality
         _d = nb_channels // cardinality
@@ -51,39 +51,33 @@ def residual_network(x):
         groups = []
         for j in range(cardinality):
             group = layers.Lambda(lambda z: z[:, :, :, j * _d:j * _d + _d])(y)
-            groups.append(layers.Conv2D(_d, kernel_size=(3, 3), strides=_strides, padding='same')(group))
+            groups.append(layers.Conv2D(_d, kernel_size=(3, 3), strides=(1, 1), padding='same')(group))
 
         # the grouped convolutional layer concatenates them as the outputs of the layer
         y = layers.concatenate(groups)
 
         return y
 
-    def residual_block(y, nb_channels_in, nb_channels_out, _strides=(1, 1), _project_shortcut=False):
-        """
-        Our network consists of a stack of residual blocks. These blocks have the same topology,
-        and are subject to two simple rules:
-        - If producing spatial maps of the same size, the blocks share the same hyper-parameters (width and filter sizes).
-        - Each time the spatial map is down-sampled by a factor of 2, the width of the blocks is multiplied by a factor of 2.
-        """
+    def residual_block(y, nb_channels_in, nb_channels_out, _project_shortcut=False):
         shortcut = y
 
         # we modify the residual building block as a bottleneck design to make the network more economical
-        y = layers.Conv2D(nb_channels_in, kernel_size=(1, 1), strides=(1, 1), padding='same')(y)
+        y = layers.Conv2D(nb_channels_in, kernel_size=(3, 3), strides=(2, 2), padding='same')(y)
         y = add_common_layers(y)
 
         # ResNeXt (identical to ResNet when `cardinality` == 1)
-        y = grouped_convolution(y, nb_channels_in, _strides=_strides)
+        y = grouped_convolution(y, nb_channels_in)
         y = add_common_layers(y)
 
-        y = layers.Conv2D(nb_channels_out, kernel_size=(1, 1), strides=(1, 1), padding='same')(y)
+        y = layers.Conv2D(nb_channels_out, kernel_size=(3, 3), strides=(1, 1), padding='same')(y)
         # batch normalization is employed after aggregating the transformations and before adding to the shortcut
         y = layers.BatchNormalization()(y)
 
         # identity shortcuts used directly when the input and output are of the same dimensions
-        if _project_shortcut or _strides != (1, 1):
+        if _project_shortcut :
             # when the dimensions increase projection shortcut is used to match dimensions (done by 1×1 convolutions)
             # when the shortcuts go across feature maps of two sizes, they are performed with a stride of 2
-            shortcut = layers.Conv2D(nb_channels_out, kernel_size=(1, 1), strides=_strides, padding='same')(shortcut)
+            shortcut = layers.Conv2D(nb_channels_out, kernel_size=(3, 3), strides=(1, 1), padding='same')(shortcut)
             shortcut = layers.BatchNormalization()(shortcut)
 
         y = layers.add([shortcut, y])
@@ -93,32 +87,31 @@ def residual_network(x):
         y = layers.LeakyReLU()(y)
 
         return y
-
+    ## 1
     # conv1
-    x = layers.Conv2D(94, kernel_size=(7, 7), strides=(2, 2), padding='same')(x)
+    x = layers.Conv2D(16, kernel_size=(3, 3), strides=(1, 1), padding='same')(x)
     x = add_common_layers(x)
 
     # conv2
-    x = layers.MaxPool2D(pool_size=(3, 3), strides=(2, 2), padding='same')(x)
+    # x = layers.MaxPool2D(pool_size=(3, 3), strides=(2, 2), padding='same')(x)
     for i in range(3):
         project_shortcut = True if i == 0 else False
-        x = residual_block(x, 8, 16, _project_shortcut=project_shortcut)
+        x = residual_block(x, 32*0.5**i, 16*2**i, _project_shortcut=project_shortcut)
 
+    ## 2
     # conv3
     for i in range(4):
         # down-sampling is performed by conv3_1, conv4_1, and conv5_1 with a stride of 2
-        strides = (2, 2) if i == 0 else (1, 1)
-        x = residual_block(x, 8, 16, _strides=strides)
+        x = residual_block(x, 8, 16)
 
     # conv4
     for i in range(6):
-        strides = (2, 2) if i == 0 else (1, 1)
-        x = residual_block(x, 16, 32, _strides=strides)
+        x = residual_block(x, 16, 32)
 
     # conv5
     for i in range(3):
         strides = (2, 2) if i == 0 else (1, 1)
-        x = residual_block(x, 32, 64, _strides=strides)
+        x = residual_block(x, 32, 64)
 
     x = layers.GlobalAveragePooling2D()(x)
     out = Activation('softmax')(Dense(10)(x))
