@@ -32,7 +32,7 @@ def model_S(weight_decay=1e-5 ,epochs=30,factor=0.6 , patience=2, s_1=7,ex_1=10,
                     out_layer = LeakyReLU()(out_layer)
                     return out_layer
 
-                if use_redux:
+                if use_redux==1:
                     out_layer = Conv2D(squeeze, (1, 1), padding='same',
                                        kernel_regularizer=keras.regularizers.l2(weight_decay))(input)
                     out_layer = BatchNormalization()(out_layer)
@@ -71,7 +71,7 @@ def model_S(weight_decay=1e-5 ,epochs=30,factor=0.6 , patience=2, s_1=7,ex_1=10,
         def mul_fire(x, res=None, squeeze=10, expand=10,plus=False):
             x = fire_module(x, squeeze=squeeze, expand=expand)
             x = fire_module(x, squeeze=squeeze, expand=expand)
-            multi_4 = add([x, conv0]) if plus else x
+            multi_4 = add([x, conv0]) if plus==1 else x
 
             return multi_4
 
@@ -115,8 +115,8 @@ def model_S(weight_decay=1e-5 ,epochs=30,factor=0.6 , patience=2, s_1=7,ex_1=10,
 
         return 0
 
-    config = "_".join([weight_decay ,epochs,factor , patience, s_1,ex_1,s_2,ex_2,use_redux,
-          drop, plus, dense_num])
+    config = "_".join([str(weight_decay) ,str(epochs),str(factor) , str(patience), str(s_1),str(ex_1),str(s_2),str(ex_2),str(use_redux),
+          str(drop), str(plus), str(dense_num)])
     def run(epochs=epochs,factor=factor , patience=patience,config=config):
 
         Tf_log = r"C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW3\TF\{config}".format(config=config)
