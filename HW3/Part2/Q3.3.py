@@ -15,10 +15,17 @@ from sklearn.neighbors import KNeighborsClassifier
 from Code.Preproces import preproces_cfar10
 from tqdm import tqdm
 import seaborn as sns
+
 sns.set_style("dark")
 
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.mixture import GaussianMixture as GMM
+from sklearn.decomposition import PCA
+from sklearn.decomposition import KernelPCA
+from sklearn import svm
+
+
 class cifar100vgg:
     def __init__(self, train=True):
         self.num_classes = 100
@@ -215,11 +222,10 @@ for layer in model.layers:
 
 VGG_x_test = clf.predict(x_test, normalize=False)
 y_test = np.argmax(y_test, 1)
+results = pd.DataFrame(columns=[100, 1_000, 10_000])
 results_rf = pd.DataFrame(columns=[100, 1_000, 10_000])
 
-
-
-for train_size in results_rf.columns:
+for train_size in results.columns:
     for estimators in tqdm(range(10, 60, 10)):
         X_train_small, _, y_train_small, _ = train_test_split(
             x_train, y_train, train_size=train_size, test_size=0.0,
@@ -227,8 +233,20 @@ for train_size in results_rf.columns:
 
         y_train_small = np.argmax(y_train_small, 1)
 
-        VGG_x_train_small = clf.predict(X_train_small,normalize=False)
+        VGG_x_train_small = clf.predict(X_train_small, normalize=False)
 
+        svm_model = svm.SVC(kernel='poly', degree=6, gamma='scale', probability=True, coef0=4.5)
+        svm_model.fit(VGG_x_train_small, y_train_small)
+        y_hat = svm_model.predict(VGG_x_test)
+        acc = np.mean(y_hat == y_test)
+
+        # kpca = KernelPCA(n_components=10, kernel='rbf', gamma=1 / 10)
+        # kpca.fit(VGG_x_test)
+        # x_trans = kpca.transform(VGG_x_train_small)
+        # gmm = GMM(n_components=10).fit(x_trans)
+        # labels = gmm.predict(x_trans)
+        plt.scatter(x_trans[:, 0], x_trans[:, 1], c=labels, s=40, cmap='viridis');
+        plt.show()
         neigh = RandomForestClassifier(n_estimators=estimators, n_jobs=-1)
         neigh.fit(VGG_x_train_small, y_train_small)
         results_rf.loc[estimators, train_size] = neigh.score(VGG_x_test, y_test)

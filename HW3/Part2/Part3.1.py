@@ -12,7 +12,9 @@ from sklearn.model_selection import train_test_split
 from Code.Preproces import preproces_cfar10
 
 import pandas as pd
-
+from tqdm import tqdm
+import seaborn as sns
+sns.set_style("dark")
 
 class cifar100vgg:
     def __init__(self, train=True):
