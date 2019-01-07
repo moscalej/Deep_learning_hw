@@ -235,18 +235,19 @@ for train_size in results.columns:
 
         VGG_x_train_small = clf.predict(X_train_small, normalize=False)
 
-        svm_model = svm.SVC(kernel='poly', degree=6, gamma='scale', probability=True, coef0=4.5)
+        svm_model = svm.SVC(kernel='poly', degree=6, probability=True, coef0=4.5)
         svm_model.fit(VGG_x_train_small, y_train_small)
         y_hat = svm_model.predict(VGG_x_test)
         acc = np.mean(y_hat == y_test)
+        print(acc)
 
         # kpca = KernelPCA(n_components=10, kernel='rbf', gamma=1 / 10)
         # kpca.fit(VGG_x_test)
         # x_trans = kpca.transform(VGG_x_train_small)
         # gmm = GMM(n_components=10).fit(x_trans)
         # labels = gmm.predict(x_trans)
-        plt.scatter(x_trans[:, 0], x_trans[:, 1], c=labels, s=40, cmap='viridis');
-        plt.show()
-        neigh = RandomForestClassifier(n_estimators=estimators, n_jobs=-1)
-        neigh.fit(VGG_x_train_small, y_train_small)
-        results_rf.loc[estimators, train_size] = neigh.score(VGG_x_test, y_test)
+        # plt.scatter(x_trans[:, 0], x_trans[:, 1], c=labels, s=40, cmap='viridis');
+        # plt.show()
+        # neigh = RandomForestClassifier(n_estimators=estimators, n_jobs=-1)
+        # neigh.fit(VGG_x_train_small, y_train_small)
+        # results_rf.loc[estimators, train_size] = neigh.score(VGG_x_test, y_test)
