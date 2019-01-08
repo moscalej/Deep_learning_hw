@@ -1,5 +1,5 @@
 import numpy as np
-from keras.layers import CuDNNLSTM, Dropout
+from keras.layers import LSTM, Dropout
 
 from keras.layers import TimeDistributed
 from keras.preprocessing.text import Tokenizer
@@ -12,10 +12,27 @@ from keras.preprocessing import sequence
 import pandas as pd
 import string
 
-df = pd.read_csv('data.csv')
-tweets = [t for t in df.Text.tolist() if type(t)==str]
-for i in range(10):
-    print(tweets[i], '\n')
+# df = pd.read_csv('data.csv')
+# tweets = [t for t in df.Text.tolist() if type(t)==str]
+# for i in range(10):
+#     print(tweets[i], '\n')
+# load the dataset but only keep the top words, zero the rest. Introduce special tokens.
+top_words = 5000
+(X_train, y_train), _ = imdb.load_data(num_words=top_words)
+X_train, X_test, y_train, y_test = train_test_split(X_train, y_train,
+                                                    test_size=0.5,
+                                                    stratify=y_train)
+max_length = 150
+word_to_id = imdb.get_word_index()
+word_to_id = {k: (v + 3) for k, v in word_to_id.items()}
+word_to_id["<PAD>"] = 0
+word_to_id["<START>"] = 1
+word_to_id["<OOV>"] = 2
+id_to_word = {v: k for k, v in word_to_id.items()}
+X_train_words = []
+for i in range(X_train.shape[0]):
+    X_train_words.append(('{} '.format('+' if y_train[i] else '-') + ' '.join(id_to_word.get(w) for w in X_train[i])))
+# X_train_words = sequence.pad_sequences(pd.Series(X_train).values, maxlen=max_length, padding='post', truncating='post')
 
 # generic vocabulary
 characters = ['<PAD>', '<START>', '<EOS>'] + list(string.printable)  # we add pad, start, and end-of-sentence
@@ -23,11 +40,14 @@ characters.remove('\x0b')
 characters.remove('\x0c')
 
 VOCABULARY_SIZE = len(characters)
-char2ind = {c:i for i,c in enumerate(characters)}
+char2ind = {c: i for i, c in enumerate(characters)}
 print("vocabulary len = %d" % VOCABULARY_SIZE)
 print(characters)
-tweets_tokenized = [[char2ind['<START>']] + [char2ind[c] for c in tweet if c in char2ind] + [char2ind['<EOS>']] for tweet in tweets]
-x_train = np.array(sequence.pad_sequences(tweets_tokenized))
+# tweets_tokenized = [[char2ind['<START>']] + [char2ind[c] for c in tweet if c in char2ind] + [char2ind['<EOS>']] for
+#                     tweet in tweets]
+reviews_tokenized = [[char2ind['<START>']] + [char2ind[c] for c in review if c in char2ind] + [char2ind['<EOS>']] for
+                     review in X_train_words]
+x_train = np.array(sequence.pad_sequences(reviews_tokenized))
 y_train = np.roll(x_train, -1, axis=-1)  # we want to predict the next character
 y_train[:, -1] = char2ind['<EOS>']
 
@@ -39,13 +59,13 @@ print(y_train.shape)
 LSTM_state_size = 512
 
 model = Sequential()
-model.add((CuDNNLSTM(LSTM_state_size, return_sequences=True, input_shape=x_train.shape[1:])))
-model.add((CuDNNLSTM(LSTM_state_size, return_sequences=True)))
+model.add((LSTM(LSTM_state_size, return_sequences=True, input_shape=x_train.shape[1:])))
+model.add((LSTM(LSTM_state_size, return_sequences=True)))
 model.add(Dropout(0.3))
-model.add((CuDNNLSTM(LSTM_state_size, return_sequences=True)))
-model.add((CuDNNLSTM(LSTM_state_size, return_sequences=True)))
+model.add((LSTM(LSTM_state_size, return_sequences=True)))
+model.add((LSTM(LSTM_state_size, return_sequences=True)))
 model.add(Dropout(0.3))
-# model.add((CuDNNLSTM(LSTM_state_size, return_sequences=True)))
+# model.add((LSTM(LSTM_state_size, return_sequences=True)))
 model.add(TimeDistributed(Dense(VOCABULARY_SIZE, activation='softmax')))
 model.compile(loss='categorical_crossentropy',
               optimizer='rmsprop',
