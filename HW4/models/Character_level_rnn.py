@@ -1,7 +1,7 @@
 import numpy as np
 from keras.callbacks import TensorBoard, ReduceLROnPlateau
 from keras.layers import LSTM, Dropout
-
+from keras.regularizers import l2
 from keras.layers import TimeDistributed
 from keras.preprocessing.text import Tokenizer
 from keras.utils import to_categorical
@@ -14,6 +14,7 @@ import string
 top_words = 30_000
 max_length = 100
 (X_train, sentiment), _ = imdb.load_data(num_words=top_words, maxlen=max_length)
+sentiment = sentiment * 2 -1
 
 word_to_id = imdb.get_word_index()
 word_to_id = {k: (v + 3) for k, v in word_to_id.items()}
@@ -68,22 +69,26 @@ y_train_cat = categorical_words(y_train)
 print(x_train_cat.shape)
 print(y_train_cat.shape)
 # %%
-LSTM_state_size = 512
+LSTM_state_size = 800
 
 
 def creat_carracter_level(LSTM_state_size, shape, optimizer='rmsprop', voc_size=101):
+    lam = 6e-5
     in_1 = Input(shape)
     in_2 = Input(shape[:-1] +(1,))
     den = multiply([in_1, in_2])
     flow = CuDNNLSTM(LSTM_state_size, return_sequences=True)(den)
-    flow = Dropout(0.3)(flow)
+    flow = Dropout(0.1)(flow)
     flow = CuDNNLSTM(LSTM_state_size, return_sequences=True)(flow)
-    flow = Dropout(0.3)(flow)
+    flow = Dropout(0.1)(flow)
     flow = CuDNNLSTM(LSTM_state_size, return_sequences=True)(flow)
-    flow = Dropout(0.3)(flow)
+    flow = Dropout(0.1)(flow)
     flow = CuDNNLSTM(LSTM_state_size, return_sequences=True)(flow)
-    flow = Dropout(0.3)(flow)
-    flow = TimeDistributed(Dense(voc_size, activation='softmax'))(flow)
+    flow = Dropout(0.1)(flow)
+    flow = CuDNNLSTM(LSTM_state_size, return_sequences=True)(flow)
+    flow = Dropout(0.1)(flow)
+
+    flow = TimeDistributed(Dense(voc_size, activation='softmax',kernel_regularizer=l2(lam)))(flow)
     model = Model([in_1, in_2], flow)
     model.compile(loss='categorical_crossentropy',
                   optimizer=optimizer,
@@ -92,10 +97,10 @@ def creat_carracter_level(LSTM_state_size, shape, optimizer='rmsprop', voc_size=
     return model
 
 
-model = creat_carracter_level(512, x_train_cat.shape[1:], optimizer='rmsprop', voc_size=VOCABULARY_SIZE)
+model = creat_carracter_level(512, x_train_cat.shape[1:], optimizer='adam', voc_size=VOCABULARY_SIZE)
 # %%
 # Call Backs
-Tf_log = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW4\TF\CarL_v01'
+Tf_log = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW4\TF\CarL_v04'
 tbCallBack = TensorBoard(log_dir=Tf_log,
                          histogram_freq=0,
                          batch_size=32,
@@ -107,7 +112,7 @@ tbCallBack = TensorBoard(log_dir=Tf_log,
                          embeddings_metadata=None)
 reduce_lr = ReduceLROnPlateau(monitor='loss',
                               factor=0.5,
-                              patience=2,
+                              patience=5,
                               min_lr=0.000001,
                               embeddings_layer_names=None,
                               embeddings_metadata=None)
@@ -116,10 +121,11 @@ sent = np.array([sentiment for _ in range(x_train_cat.shape[1])]).T.reshape((573
 model.fit([x_train_cat, sent],
           y_train_cat,
           validation_split=0.2,
-          epochs=200,
-          batch_size=128,
+          epochs=320,
+          batch_size=100,
+          initial_epoch=280,
           callbacks=[tbCallBack, reduce_lr])
-model.save(r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW4\models\cl.h5')
+model.save(r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW4\models\cl_v4_320.h5')
 
 
 # %%
