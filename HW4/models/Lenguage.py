@@ -59,5 +59,25 @@ def data_generator(Data, Labels, batch_size=128, voc_size=20_000):
         yield [x_batch, sentiment], L_rnn
 
 
+def data_generator_embeding(Data, batch_size=128, voc_size=20_000):
+    tensor = Data.values
+    values = []
+    for i in [2, 0, 1, 3, 4]:
+        values.append(np.roll(tensor, i, axis=1).reshape(-1))
+
+    data = values[0]
+    val = values[1:]
+    labels = np.array(values[1:])
+    while 1:
+        rand_labels = np.apply_along_axis(np.random.choice, 0, labels)
+        for mini_bath in range(batch_size, data.shape[0] // batch_size, batch_size):
+            x_batch = data[mini_bath - batch_size:mini_bath]
+            y_batch = rand_labels[mini_bath - batch_size:mini_bath]
+            # x_batch_one = to_categorical(x_batch, num_classes=voc_size).reshape([batch_size,voc_size,1])
+            y_batch_one = to_categorical(y_batch, num_classes=voc_size).reshape([batch_size,voc_size,1])
+            yield (x_batch, y_batch_one)
+
+
 if __name__ == '__main__':
-    Data, Labels, word_to_id, id_to_word = load_imbd(20_000, 200)
+    pass
+    # Data, Labels, word_to_id, id_to_word = load_imbd(20_000, 200)

@@ -1,28 +1,20 @@
 import numpy as np
+from keras.callbacks import TensorBoard, ReduceLROnPlateau
 from keras.layers import LSTM, Dropout
 
 from keras.layers import TimeDistributed
 from keras.preprocessing.text import Tokenizer
 from keras.utils import to_categorical
-from sklearn.model_selection import train_test_split
 from keras.datasets import imdb
-from keras.models import Sequential
-from keras.layers import Dense, LSTM, Embedding
+from keras.models import Sequential, Model
+from keras.layers import *
 from keras.preprocessing import sequence
-import pandas as pd
 import string
 
-# df = pd.read_csv('data.csv')
-# tweets = [t for t in df.Text.tolist() if type(t)==str]
-# for i in range(10):
-#     print(tweets[i], '\n')
-# load the dataset but only keep the top words, zero the rest. Introduce special tokens.
-top_words = 5000
-(X_train, y_train), _ = imdb.load_data(num_words=top_words)
-X_train, X_test, y_train, y_test = train_test_split(X_train, y_train,
-                                                    test_size=0.5,
-                                                    stratify=y_train)
-max_length = 150
+top_words = 30_000
+max_length = 100
+(X_train, sentiment), _ = imdb.load_data(num_words=top_words, maxlen=max_length)
+
 word_to_id = imdb.get_word_index()
 word_to_id = {k: (v + 3) for k, v in word_to_id.items()}
 word_to_id["<PAD>"] = 0
@@ -31,51 +23,106 @@ word_to_id["<OOV>"] = 2
 id_to_word = {v: k for k, v in word_to_id.items()}
 X_train_words = []
 for i in range(X_train.shape[0]):
-    X_train_words.append(('{} '.format('+' if y_train[i] else '-') + ' '.join(id_to_word.get(w) for w in X_train[i])))
-# X_train_words = sequence.pad_sequences(pd.Series(X_train).values, maxlen=max_length, padding='post', truncating='post')
-
+    X_train_words.append(' '.join(id_to_word.get(w) for w in X_train[i]))
+# %%
 # generic vocabulary
 characters = ['<PAD>', '<START>', '<EOS>'] + list(string.printable)  # we add pad, start, and end-of-sentence
 characters.remove('\x0b')
 characters.remove('\x0c')
-
+# %%
 VOCABULARY_SIZE = len(characters)
 char2ind = {c: i for i, c in enumerate(characters)}
 print("vocabulary len = %d" % VOCABULARY_SIZE)
-print(characters)
-# tweets_tokenized = [[char2ind['<START>']] + [char2ind[c] for c in tweet if c in char2ind] + [char2ind['<EOS>']] for
-#                     tweet in tweets]
-reviews_tokenized = [[char2ind['<START>']] + [char2ind[c] for c in review if c in char2ind] + [char2ind['<EOS>']] for
-                     review in X_train_words]
+
+
+# %%
+
+def to_char_level(X_train_words, char2ind):
+    reviews_tokenized = []
+    for review in X_train_words:
+        sentence = [char2ind['<START>']]
+        sentence.extend([char2ind[c] for c in review if c in char2ind])
+        sentence.append(char2ind['<EOS>'])
+        reviews_tokenized.append(sentence)
+    return reviews_tokenized
+
+
+reviews_tokenized = to_char_level(X_train_words, char2ind)
+# %%
 x_train = np.array(sequence.pad_sequences(reviews_tokenized))
 y_train = np.roll(x_train, -1, axis=-1)  # we want to predict the next character
 y_train[:, -1] = char2ind['<EOS>']
 
-x_train = np.array([to_categorical(x, num_classes=VOCABULARY_SIZE) for x in x_train])
-y_train = np.array([to_categorical(y, num_classes=VOCABULARY_SIZE) for y in y_train])
-print(x_train.shape)
-print(y_train.shape)
 
+# %%
+# @njit()
+def categorical_words(x_train):
+    a = []
+    for x in x_train:
+        a.append(to_categorical(x, num_classes=VOCABULARY_SIZE))
+    return np.array(a)
+
+
+x_train_cat = categorical_words(x_train)
+y_train_cat = categorical_words(y_train)
+print(x_train_cat.shape)
+print(y_train_cat.shape)
+# %%
 LSTM_state_size = 512
 
-model = Sequential()
-model.add((LSTM(LSTM_state_size, return_sequences=True, input_shape=x_train.shape[1:])))
-model.add((LSTM(LSTM_state_size, return_sequences=True)))
-model.add(Dropout(0.3))
-model.add((LSTM(LSTM_state_size, return_sequences=True)))
-model.add((LSTM(LSTM_state_size, return_sequences=True)))
-model.add(Dropout(0.3))
-# model.add((LSTM(LSTM_state_size, return_sequences=True)))
-model.add(TimeDistributed(Dense(VOCABULARY_SIZE, activation='softmax')))
-model.compile(loss='categorical_crossentropy',
-              optimizer='rmsprop',
-              metrics=['accuracy'])
-print(model.summary())
-model.fit(x_train, y_train,
-          validation_split=0.1,
-          epochs=40, batch_size=128)
+
+def creat_carracter_level(LSTM_state_size, shape, optimizer='rmsprop', voc_size=101):
+    in_1 = Input(shape)
+    in_2 = Input(shape[:-1] +(1,))
+    den = multiply([in_1, in_2])
+    flow = CuDNNLSTM(LSTM_state_size, return_sequences=True)(den)
+    flow = Dropout(0.3)(flow)
+    flow = CuDNNLSTM(LSTM_state_size, return_sequences=True)(flow)
+    flow = Dropout(0.3)(flow)
+    flow = CuDNNLSTM(LSTM_state_size, return_sequences=True)(flow)
+    flow = Dropout(0.3)(flow)
+    flow = CuDNNLSTM(LSTM_state_size, return_sequences=True)(flow)
+    flow = Dropout(0.3)(flow)
+    flow = TimeDistributed(Dense(voc_size, activation='softmax'))(flow)
+    model = Model([in_1, in_2], flow)
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=optimizer,
+                  metrics=['accuracy'])
+    model.summary()
+    return model
 
 
+model = creat_carracter_level(512, x_train_cat.shape[1:], optimizer='rmsprop', voc_size=VOCABULARY_SIZE)
+# %%
+# Call Backs
+Tf_log = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW4\TF\CarL_v01'
+tbCallBack = TensorBoard(log_dir=Tf_log,
+                         histogram_freq=0,
+                         batch_size=32,
+                         write_graph=True,
+                         write_grads=True,
+                         write_images=True,
+                         embeddings_freq=0,
+                         embeddings_layer_names=None,
+                         embeddings_metadata=None)
+reduce_lr = ReduceLROnPlateau(monitor='loss',
+                              factor=0.5,
+                              patience=2,
+                              min_lr=0.000001,
+                              embeddings_layer_names=None,
+                              embeddings_metadata=None)
+# %%
+sent = np.array([sentiment for _ in range(x_train_cat.shape[1])]).T.reshape((5736, 634,1))
+model.fit([x_train_cat, sent],
+          y_train_cat,
+          validation_split=0.2,
+          epochs=200,
+          batch_size=128,
+          callbacks=[tbCallBack, reduce_lr])
+model.save(r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW4\models\cl.h5')
+
+
+# %%
 def sample(preds, temperature=1.0):
     """Helper function to sample an index from a probability array"""
     preds = np.asarray(preds).astype('float64')
@@ -88,6 +135,7 @@ def sample(preds, temperature=1.0):
 
 def generate_text(model, seed="I am", max_len=300, diversity=0.5):
     """Generate characters from a given seed"""
+    global characters
     result = np.zeros((1,) + x_train.shape[1:])
     result[0, 0, char2ind['<START>']] = 1
     next_res_ind = 1

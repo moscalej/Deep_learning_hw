@@ -23,6 +23,7 @@ import models.BLEU as bl
 
 # MACROS
 WORD_COUNT = 18_000
+
 REVIEW_LENGHT = 80
 
 # %%
