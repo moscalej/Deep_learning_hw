@@ -162,7 +162,7 @@ def run(epochs ,initial_epoch):
                              data_format=None,
                              validation_split=0.)
 
-    img.fit(x_test)
+    img.fit(x_train)
 
     tbCallBack = keras.callbacks.TensorBoard(log_dir=Tf_log,
                                              histogram_freq=0,

@@ -26,6 +26,7 @@ import cv2
 import numpy as np
 import os
 from numba import njit
+from sklearn.model_selection import train_test_split
 
 
 
@@ -108,6 +109,7 @@ def for_embeding(data,normalize =True):
     else:
         x_center = x
     x_center = np.expand_dims(x_center, axis=3)
+    x_center,_,y,_ =train_test_split(x_center,y ,test_size =0)
     return x_center , y
 
 
