@@ -40,10 +40,10 @@ class ReviewGenerator:
 
         #Sensitivity Input
         input2 = Input([review_len])
-        sentiment_flow = Dense(review_len, activation='relu')(input2)
+        # sentiment_flow = Dense(review_len, activation='relu')(input2)
         sentiment_flow = Reshape([review_len, 1])(input2)
         # Merge the inputs
-        merge_layer = concatenate([sentiment_flow, in_and_embedding], axis=2)
+        merge_layer = multiply([sentiment_flow, in_and_embedding])
 
         merged_flow = LSTM(l_s_t_m_state_size, dropout=0.4, recurrent_dropout=0.2, return_sequences=True)(
             merge_layer)
