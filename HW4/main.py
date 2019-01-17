@@ -36,10 +36,10 @@ reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.8,
 a.model.summary()
 # %%
 
-generator = data_generator(Data, Labels, 128, voc_size=WORD_COUNT)
+generator = data_generator(Data.values, Labels.values, 128, voc_size=WORD_COUNT)
 
 a.model.fit_generator(generator, steps_per_epoch=25_000 // 128, epochs=1000,
                       verbose=1, callbacks=[tbCallBack, checkpoint, reduce_lr],
-                      use_multiprocessing=True, shuffle=True, initial_epoch=0)
+                      use_multiprocessing=False, shuffle=True, initial_epoch=0)
 
 a.model.save(r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW4\checkpoint\word_level.h5')

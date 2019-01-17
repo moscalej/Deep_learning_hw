@@ -38,7 +38,7 @@ def tranaslte(data_id_rows, id_to_word):
     foo = lambda x: id_to_word[x]
     return data_id_rows.apply(foo)
 
-@njit()
+# @njit()
 def create_labels_rnn(Y, num_classes):
     a = to_categorical(np.roll(Y, -1), num_classes=num_classes)
     return a
@@ -50,7 +50,7 @@ def pd2list(Data, id_to_word):
         list.append([id_to_word[id] for id in row[1]])
     return list
 
-@njit()
+# @njit()
 def data_generator(Data, Labels, batch_size=128, voc_size=20_000):
     while 1:
         x_batch, _, y_batch, _ = train_test_split(Data, Labels, train_size=batch_size,shuffle=True)
