@@ -11,7 +11,7 @@ from nltk.translate.bleu_score import sentence_bleu, corpus_bleu
 
 
 class BLEU:
-    def __init__(self, reference_sentences, candidate_sentences=[], ngram_weights=(1, 0, 0, 0)):
+    def __init__(self, reference_sentences, candidate_sentences=[], ngram_weights=(1., 0., 0., 0.)):
         """
 
         :param reference_sentences: inputted list of sentences. Our corpus

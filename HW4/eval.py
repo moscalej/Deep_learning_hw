@@ -1,6 +1,6 @@
 #
 """
-Authors :        Zachary Bamberger
+Authors :       Alex Finkelshtein
                 Alejandro Moscoso
 summary :       This Scrip is use for evaluating
                 and debugging our model, here we generate
@@ -35,7 +35,7 @@ except IndexError as e:
     model_path = r"data/200-2.4376.h5"
 
 Data, Labels, word_to_id, id_to_word = lg.load_imbd(1, 1)
-trained_model = rg.ReviewGenerator(load_path=r"data/200-2.4376.h5", word2ind=word_to_id, ind2word=id_to_word,
+trained_model = rg.ReviewGenerator(load_path=r"C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\HW4\checkpoint\word_level.h5", word2ind=word_to_id, ind2word=id_to_word,
                                    review_len=REVIEW_LENGHT)
 
 # %%
@@ -43,10 +43,10 @@ trained_model = rg.ReviewGenerator(load_path=r"data/200-2.4376.h5", word2ind=wor
 # sentences from our model.
 
 positive_sentiment = np.ones(shape=[1, REVIEW_LENGHT])
-negative_sentiment = np.zeros(shape=[1, REVIEW_LENGHT])
+negative_sentiment = -1 * np.ones(shape=[1, REVIEW_LENGHT])
 
-mix = negative_sentiment.copy()
-mix[0, 10:] = 1
+mix = positive_sentiment.copy()
+mix[0, 1:] = - 0.4
 
 # Generate 25 positive and 25 negative sentences
 positive_sentences = []
@@ -54,7 +54,7 @@ negative_sentences = []
 # %%
 # Print one sequence
 
-p = trained_model.generate_text(seed='no i can not i have to order flight'.split(), max_len=REVIEW_LENGHT,
+p = trained_model.generate_text(seed='no i can not i have'.split(), max_len=REVIEW_LENGHT,
                                 temperature=0.3,
                                 word_sentiment=negative_sentiment, verbose=0)
 
@@ -99,20 +99,29 @@ negative_sentences = pd2list(pd.DataFrame(negative_sentences), id_to_word)
 # %%
 # Start with unigram model. This will yield best results.
 # Once we know things are working properly, check bigram and trigram models as well.
-positive_bleu = bl.BLEU(reference_sentences=positive_corpus, candidate_sentences=positive_sentences)
-negative_bleu = bl.BLEU(reference_sentences=negative_corpus, candidate_sentences=negative_sentences)
+positive_bleu = bl.BLEU(reference_sentences=positive_corpus, candidate_sentences=positive_sentences,ngram_weights=(0.4,0.3,0.3,0))
+negative_bleu = bl.BLEU(reference_sentences=negative_corpus, candidate_sentences=negative_sentences,ngram_weights=(0.4,0.3,0.3,0))
 
 # %%
 # Print out positive bleu scores in various formats.
 # print("Positive bleu cumulative score: " + str(positive_bleu.get_cumulative_candidate_scores()))
+list_blu = []
 print("Positive bleu mean score: " + str(positive_bleu.get_mean_bleu_score()))
 print("Positive sentence bleu scores:")
 for ps in positive_sentences:
-    print(ps, positive_bleu.get_sentence_score(ps))
+    p_s = " ".join(ps)
+    p_s_S = positive_bleu.get_sentence_score(ps)
+    print(p_s, )
+    list_blu.append(['ps',p_s,p_s_S])
 
 # Print out negative bleu scores in various formats.
 # print("Negative bleu cumulative score: " + str(negative_bleu.get_cumulative_candidate_scores()))
 print("Negative bleu mean score: " + str(negative_bleu.get_mean_bleu_score()))
 print("Negative sentence bleu scores:")
 for ns in positive_sentences:
-    print(ns, negative_bleu.get_sentence_score(ns))
+    n_s = " ".join(ns)
+    n_s_S = negative_bleu.get_sentence_score(ns)
+    print(n_s, n_s_S)
+    list_blu.append(['ns', n_s, n_s_S])
+
+pd.DataFrame(list_blu,columns=['Sentiment', 'Sentence','Blue Score'])
