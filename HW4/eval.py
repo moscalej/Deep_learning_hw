@@ -124,4 +124,4 @@ for ns in positive_sentences:
     print(n_s, n_s_S)
     list_blu.append(['ns', n_s, n_s_S])
 
-pd.DataFrame(list_blu,columns=['Sentiment', 'Sentence','Blue Score'])
+pd.DataFrame(list_blu,columns=['Sentiment', 'Sentence','Blue Score']).to_csv('Blue_score_hw.csv')
