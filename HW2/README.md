@@ -1,5 +1,5 @@
 
-# Alex Finkelshtein : 307573378  Alejandro Moscoso : 332336908
+
 
 HW2:            github:  https://github.com/moscalej/Deep_learning_hw
 
@@ -16,3 +16,8 @@ Files:
                 Test.py
                 README.md
                 requirements.txt
+
+#Autors
+- Alejandro Moscoso moscalej@gmail.com
+- Alex Finkelshtein : 307573378  
+- Zachary Bamberger 
