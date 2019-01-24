@@ -1,10 +1,4 @@
-"""
-Authors :    Zachary Bamberger
-            Alejandro Moscoso
-summary :   This Module is in charge of :
-            provide basic functions for the language manipulation
 
-"""
 
 #  External modules
 from keras.datasets import imdb

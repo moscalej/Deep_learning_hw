@@ -1,11 +1,4 @@
-"""
-Authors :     Zachary Bamberger
-             Alejandro Moscoso
-summary :    This Module is in charge of :
-             defining the class
-                        BLEU
-                            witch will be use for scoring
-"""
+
 
 from nltk.translate.bleu_score import sentence_bleu, corpus_bleu
 

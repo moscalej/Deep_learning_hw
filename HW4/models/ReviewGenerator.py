@@ -1,14 +1,4 @@
-"""
-Authors :    Zachary Bamberger
-            Alejandro Moscoso
-summary :   This Module is in charge of :
-            defining the class
-            ReviewGenerator
-                witch will be the builder of our network
-                with this class we will train our model
-                and generate sequences
 
-"""
 
 from keras.models import Model, load_model
 from keras.layers import *
