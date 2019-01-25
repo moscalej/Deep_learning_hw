@@ -16,6 +16,7 @@ Links
     models/Character_level_rnn.py
     models/BLEU.py
     models/Lenguage.py
+    models/embeding.py
     models/ReviewGenerator.py
     eval.py
     main.py

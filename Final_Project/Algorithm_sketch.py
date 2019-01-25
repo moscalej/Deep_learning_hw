@@ -40,7 +40,7 @@ class Puzzle:
             (absX, absY) = self.get_abs_coo(self.relative_coo[new_crop])
             self.cyclic_puzzle[absX, absY] = new_crop  # put the piece in the puzzle
             neigh_tups = self.get_neigh(absX, absY)
-            directs = set(3, 6, 9, 12)
+            directs = {3, 6, 9, 12}
             for (crop_ind, direct) in neigh_tups:
                 directs.remove(direct)
                 self.next_candidates[crop_ind].remove((6 + direct) % 12)  # remove opposite direction
