@@ -68,9 +68,8 @@ def pre_process_data(input_path: str, cuts: int, shape: int = 32) -> np.ndarray:
     return np.array(images)
 
 
-def stich(image, crop_ind, true_c, orient):
-    img1 = image[crop_ind]
-    img2 = image[true_c]
+@njit()
+def stich(img1, img2, orient):
     # (up, down, left, right)
     if orient == 0:
         stiched = np.rot90(np.concatenate((img2, img1), axis=0))
@@ -80,14 +79,17 @@ def stich(image, crop_ind, true_c, orient):
         stiched = np.concatenate((img2, img1), axis=1)
     if orient == 3:
         stiched = np.concatenate((img1, img2), axis=1)
+    else:
+        return "error"
     return stiched
 
 
-def processed2train(images: list, axis_size) -> np.array:
+# @njit()
+def processed2train(images: np.ndarray, axis_size) -> list:
     trainX = []
     trainY = []
     for im_ind, image in enumerate(images):
-        OOD_inds = (np.random.choice(range(0, im_ind) + range(im_ind + 1, len(images)), size=axis_size))
+        OOD_inds = (np.random.choice([i for i in range(len(images)) if i != im_ind], size=axis_size))
         crop_with_OOD = np.random.choice(range(len(image)), size=axis_size)
         for crop_ind, crop in enumerate(image):
             neighs = crop[3]  # neighbours(up, down, left, right)
@@ -97,19 +99,22 @@ def processed2train(images: list, axis_size) -> np.array:
             false_crops = np.random.choice([i for i in range(len(image)) if i not in neigh_inds + [crop_ind]],
                                            size=num_neigh)
             if crop_ind in crop_with_OOD:
-                false_crops[0] = yield OOD_inds
+                false_crops[0] = next(OOD_inds)
+
             # add true samples
             for (true_c, orient) in true_crops:
-                trainX.append(stich(image, crop_ind, true_c, orient))
+                trainX.append(stich(crop[0], image[true_c], orient))
                 trainY.append(1)
+
             # add false samples
             for (false_c, orient_) in false_crops:
-                trainX.append(stich(image, crop_ind, false_c, orient_))
+                trainX.append(stich(crop[0], image[false_c][0], np.random.choice([0, 1, 2, 3], size=1)))
                 trainY.append(0)
 
     return trainX, trainY
 
 
+# @njit()
 def create_train_set(input_paths, shape=32):
     trainX = []
     trainY = []
@@ -117,8 +122,8 @@ def create_train_set(input_paths, shape=32):
         for cut_size in [2, 4, 5]:
             processed = pre_process_data(input_path, cut_size, shape)
             X, Y = processed2train(processed, cut_size)
-            trainX += X
-            trainY += Y
+            trainX.extend(X)
+            trainY.extend(Y)
 
     return trainX, trainY
 
