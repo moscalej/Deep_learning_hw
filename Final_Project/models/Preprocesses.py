@@ -29,6 +29,7 @@ from numba import njit
 from sklearn.model_selection import train_test_split
 
 
+#  TODO: pre-process for inference (unknown cuts, OOD samples, already shredded)
 def pre_process_data(input_path: str, cuts: int, shape: int = 32) -> np.ndarray:
     """
     this function will pre process the data making a list of touples where
@@ -66,6 +67,7 @@ def pre_process_data(input_path: str, cuts: int, shape: int = 32) -> np.ndarray:
             images.append(image)
     return np.array(images)
 
+
 def stich(image, crop_ind, true_c, orient):
     img1 = image[crop_ind]
     img2 = image[true_c]
@@ -81,18 +83,19 @@ def stich(image, crop_ind, true_c, orient):
     return stiched
 
 
-def create_train_set(images: list, axis_size) -> np.array:
+def processed2train(images: list, axis_size) -> np.array:
     trainX = []
     trainY = []
     for im_ind, image in enumerate(images):
-        OOD_inds = (np.random.choice(range(0,im_ind) + range(im_ind+1, len(images)), size=axis_size))
+        OOD_inds = (np.random.choice(range(0, im_ind) + range(im_ind + 1, len(images)), size=axis_size))
         crop_with_OOD = np.random.choice(range(len(image)), size=axis_size)
         for crop_ind, crop in enumerate(image):
             neighs = crop[3]  # neighbours(up, down, left, right)
-            num_neigh = np.count_nonzero(np.array(neighs)+1)
-            true_crops = [(neigh_ind, orient) for orient, neigh_ind in neighs if neigh_ind != -1 ]
-            neigh_inds = [neigh for (neigh,_) in true_crops if neigh != -1]
-            false_crops = np.random.choice([i for i in range(len(image)) if i not in neigh_inds + [crop_ind]], size=num_neigh)
+            num_neigh = np.count_nonzero(np.array(neighs) + 1)
+            true_crops = [(neigh_ind, orient) for orient, neigh_ind in neighs if neigh_ind != -1]
+            neigh_inds = [neigh for (neigh, _) in true_crops if neigh != -1]
+            false_crops = np.random.choice([i for i in range(len(image)) if i not in neigh_inds + [crop_ind]],
+                                           size=num_neigh)
             if crop_ind in crop_with_OOD:
                 false_crops[0] = yield OOD_inds
             # add true samples
@@ -103,6 +106,19 @@ def create_train_set(images: list, axis_size) -> np.array:
             for (false_c, orient_) in false_crops:
                 trainX.append(stich(image, crop_ind, false_c, orient_))
                 trainY.append(0)
+
+    return trainX, trainY
+
+
+def create_train_set(input_paths, shape=32):
+    trainX = []
+    trainY = []
+    for input_path in input_paths:
+        for cut_size in [2, 4, 5]:
+            processed = pre_process_data(input_path, cut_size, shape)
+            X, Y = processed2train(processed, cut_size)
+            trainX += X
+            trainY += Y
 
     return trainX, trainY
 
