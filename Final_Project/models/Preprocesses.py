@@ -59,15 +59,56 @@ def pre_process_data(input_path: str, cuts: int, shape: int = 32) -> np.ndarray:
             for h in range(cuts):
                 for w in range(cuts):
                     crop = im[h * frac_h:(h + 1) * frac_h, w * frac_w:(w + 1) * frac_w]
-                    crop_rehaped = cv2.resize(crop, (shape, shape))
+                    crop_reshaped = cv2.resize(crop, (shape, shape))
+                    crop_reshaped = crop_reshaped
                     i = i + 1
-                    image.append([crop_rehaped, i, number_to_angle(i, cuts), niegbors(i, cuts)])
+                    image.append([crop_reshaped, i, number_to_angle(i, cuts), neighbours(i, cuts)])
             images.append(image)
     return np.array(images)
 
+def stich(image, crop_ind, true_c, orient):
+    img1 = image[crop_ind]
+    img2 = image[true_c]
+    # (up, down, left, right)
+    if orient == 0:
+        stiched = np.rot90(np.concatenate((img2, img1), axis=0))
+    if orient == 1:
+        stiched = np.rot90(np.concatenate((img1, img2), axis=0))
+    if orient == 2:
+        stiched = np.concatenate((img2, img1), axis=1)
+    if orient == 3:
+        stiched = np.concatenate((img1, img2), axis=1)
+    return stiched
+
+
+def create_train_set(images: list, axis_size) -> np.array:
+    trainX = []
+    trainY = []
+    for im_ind, image in enumerate(images):
+        OOD_inds = (np.random.choice(range(0,im_ind) + range(im_ind+1, len(images)), size=axis_size))
+        crop_with_OOD = np.random.choice(range(len(image)), size=axis_size)
+        for crop_ind, crop in enumerate(image):
+            neighs = crop[3]  # neighbours(up, down, left, right)
+            num_neigh = np.count_nonzero(np.array(neighs)+1)
+            true_crops = [(neigh_ind, orient) for orient, neigh_ind in neighs if neigh_ind != -1 ]
+            neigh_inds = [neigh for (neigh,_) in true_crops if neigh != -1]
+            false_crops = np.random.choice([i for i in range(len(image)) if i not in neigh_inds + [crop_ind]], size=num_neigh)
+            if crop_ind in crop_with_OOD:
+                false_crops[0] = yield OOD_inds
+            # add true samples
+            for (true_c, orient) in true_crops:
+                trainX.append(stich(image, crop_ind, true_c, orient))
+                trainY.append(1)
+            # add false samples
+            for (false_c, orient_) in false_crops:
+                trainX.append(stich(image, crop_ind, false_c, orient_))
+                trainY.append(0)
+
+    return trainX, trainY
+
 
 @njit()
-def niegbors(number: int, number_sectors: int) -> [int, int, int, int]:
+def neighbours(number: int, number_sectors: int) -> [int, int, int, int]:
     """
     This function will give each picture there neigbors
     :param number: where in the grid

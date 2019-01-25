@@ -57,11 +57,26 @@ class Puzzle:
         return (relX % self.axis_size, relY % self.axis_size)
 
 
-# High Level
-def Assemble(image_list: list, matcher: Model) -> np.array:
-    axis_size = int(np.sqrt(len(image_list)))
+def get_prob_dict(crop_list, matcher):
+    neighbours_def = [(1, 0), (0, -1), (-1, 0), (0, 1)]
+    directions_def = set([3, 6, 9, 12])
+    crop_num = len(crop_list)
+    prob_dict = dict()
+    for crop_ind in range(crop_num):
+        prob_dict[crop_ind] = {}
+        for crop_cand_ind in range(crop_num):
+            prob_dict[crop_ind][crop_cand_ind] = {}
+            for direction in directions_def:
+                prob_dict[crop_ind][crop_cand_ind][direction] = matcher()
 
-    match_prob_dict = check_all_matches(image_list, matcher)
+
+
+
+# High Level
+def Assemble(crop_list: list, matcher: Model) -> np.array:
+    axis_size = int(np.sqrt(len(crop_list)))
+
+    match_prob_dict = get_prob_dict(crop_list, matcher)  # sorted dictionary
 
     anchor_crop = get_top_match(dict_matches)
     puzzle = Puzzle(axis_size, anchor_crop)
