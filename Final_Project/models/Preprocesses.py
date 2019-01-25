@@ -1,32 +1,9 @@
-"""
-# INTEL CONFIDENTIAL
-# Copyright 2018 Intel Corporation All Rights Reserved.
-# The source code contained or described herein and all documents related
-# to the source code ("Material") are owned by Intel Corporation or its
-# suppliers or licensors. Title to the Material remains with Intel Corp-
-# oration or its suppliers and licensors. The Material contains trade
-# secrets and proprietary and confidential information of Intel Corpor-
-# ation or its suppliers and licensors. The Material is protected by world-
-# wide copyright and trade secret laws and treaty provisions. No part of
-# the Material may be used, copied, reproduced, modified, published,
-# uploaded, posted, transmitted, distributed, or disclosed in any way
-# without Intel's prior express written permission.
-# No license under any patent, copyright, trade secret or other intellect-
-# ual property right is granted to or conferred upon you by disclosure or
-# delivery of the Materials, either expressly, by implication, inducement,
-# estoppel or otherwise. Any license under such intellectual property
-# rights must be express and approved by Intel in writing.
-#
-#           #           #           #
-# Authors:  Alejandro Moscoso <alejandro.moscoso@intel.com>
-#           Michal Schachter <michal.schachter@intel.com>
-#
-"""
 import cv2
 import numpy as np
 import os
 from numba import njit
 from sklearn.model_selection import train_test_split
+from scipy import signal
 
 
 #  TODO: pre-process for inference (unknown cuts, OOD samples, already shredded)
@@ -93,7 +70,10 @@ def stich(img1, img2, orient):
         stiched = np.concatenate((img1, img2), axis=1)
     else:
         return "error"
-    return stiched
+    sobelx = cv2.Sobel(stiched, cv2.CV_64F, 1, 0, ksize=5)
+    sobely = cv2.Sobel(stiched, cv2.CV_64F, 0, 1, ksize=5)
+    return np.stack([sobelx, sobely, stiched], 0)
+    # return stiched
 
 
 # @njit()
