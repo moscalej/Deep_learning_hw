@@ -2,95 +2,71 @@ import numpy as np
 from keras.models import Sequential, Model
 
 
-class Node:
-    def __init__(self, dataval=None):
-        self.dataval = dataval
-        self.nextval = None
-
-
-class SLinkedList:
-    def __init__(self):
-        self.headval = None
-        self.above = 0
-        self.below = 0
-
-    def listprint(self):
-        printval = self.headval
-        while printval is not None:
-            print(printval.dataval)
-            printval = printval.nextval
-
-    def AtBegining(self, newdata):
-        NewNode = Node(newdata)
-        NewNode.nextval = self.headval
-        self.headval = NewNode
-
-    def AtEnd(self, newdata):
-        NewNode = Node(newdata)
-        if self.headval is None:
-            self.headval = NewNode
-            return
-        laste = self.headval
-        while (laste.nextval):
-            laste = laste.nextval
-        laste.nextval = NewNode
-
-
-# High Level:
-
 class Puzzle:
     def __init__(self, axis_size: int, first_crop: int):
 
-        self.horizontals = dict()
-        self.horizontal = SLinkedList()
-        self.horizontal.AtBegining(SLinkedList().AtBegining(first_crop))
-        # self.verticals = dict()
-        # self.verticals['0'] = SLinkedList()
-        # self.verticals.AtBegining(first_crop)
-
+        self.cyclic_puzzle = np.ones(axis_size, axis_size) * -1
+        self.cyclic_puzzle[0, 0] = first_crop
         self.axis_size = axis_size
-        self.height = 1
-        self.width = 1
-        self.left = 0
-        self.right = 0
-        self.next_candidates = {first_crop: [3, 6, 9, 12]}
-        self.crops_coo[first_crop] = (0,0)  # (right, left)
-    def add_piece(self, target_crop, new_crop: int, orientation: int):
-        horizontals_ind = self.crops_coo(target_crop)
-        (targetX, targetY) =self.crop_coo[target_crop][0]
-        if orientation == 3:  # right
-            if  targetX< self.right:  # linked list for vertical exists
-                distance = np.abs(self.left)+targetX +1
-                vertical_list = n_steps(distance)
+        self.relative_dims = dict({3: 0, 6: 0, 9: 0, 12: 0})
+        self.next_candidates = {first_crop: set(3, 6, 9, 12)}
+        self.relative_coo[first_crop] = (0, 0)  # (right, left)
+        self.neighbours_def = [(1, 0), (0, -1), (-1, 0), (0, 1)]
+        self.directions_def = [3, 6, 9, 12]
 
-                .AtEnd(new_crop)
-        if orientation == 9:  # left
-            self.horizontals[horizontals_ind].AtBegining(new_crop)
-        if orientation == 12:  # above
-        if orientation == 6:  # below
+    def add_piece(self, target_crop, new_crop: int, orientation: int) -> None:
+        """
+        adds a piece to puzzle (relative coo and abs coo (cyclic_puzzle))
+        updates next_candidates, relative dims
+        :param target_crop:
+        :type target_crop:
+        :param new_crop:
+        :type new_crop:
+        :param orientation:
+        :type orientation:
+        :return:
+        :rtype: None
+        """
+        neighbours = self.neighbours_def
+        directions = self.directions_def
+        (targetX, targetY) = self.relative_coo[target_crop]  # relative coo
+        for direct, (dX, dY) in enumerate(zip(directions, neighbours)):
+            if direct != orientation:  # execute given orientation
+                continue
+            self.relative_coo[new_crop] = (targetX + dX, targetY + dY)
+            curr_dim = self.relative_dims[direct]
+            if max(abs(dX * targetX), abs(dY * targetY)) == curr_dim:  # check if relative dimension expanded
+                self.relative_dims[direct] = self.relative_dims[direct] + 1
+            (absX, absY) = self.get_abs_coo(self.relative_coo[new_crop])
+            self.cyclic_puzzle[absX, absY] = new_crop  # put the piece in the puzzle
+            neigh_tups = self.get_neigh(absX, absY)
+            directs = set(3, 6, 9, 12)
+            for (crop_ind, direct) in neigh_tups:
+                directs.remove(direct)
+                self.next_candidates[crop_ind].remove((6 + direct) % 12)  # remove opposite direction
+            self.next_candidates[new_crop] = directs
 
 
+    def get_neigh(self, absX, absY):
+        neighbours = self.neighbours_def
+        directions = self.directions_def
+        return [(self.cyclic_puzzle[absX + dX, absY + dY], directions[ind]) for ind, (dX, dY) in enumerate(neighbours)
+                if self.cyclic_puzzle[absX + dX, absY + dY] != -1]
 
-class Crop:
-    def __init__(self, full_size, img_ind):
-        self.full_size = full_size
-        self.img_inds = img_ind
-
-
-def get_tasks(crops_list: list, axis_size: int) -> dict:
-    pass
-
-
-def create_crops(image_list):
-    create_crops
+    def get_abs_coo(self, relX, relY):
+        return (relX % self.axis_size, relY % self.axis_size)
 
 
+# High Level
 def Assemble(image_list: list, matcher: Model) -> np.array:
-    candidates = len(image_list)
     axis_size = int(np.sqrt(len(image_list)))
-    crops_list = create_crops(image_list)
-    while (True):
-        task_dict = get_tasks(crops_list, axis_size)
-        for target, space in task_dict.items():
-            pairs = matcher(target, space)
-        crops_list = filter_and_stich(pairs, crops_list)
+
+    match_prob_dict = check_all_matches(image_list, matcher)
+
+    anchor_crop = get_top_match(dict_matches)
+    puzzle = Puzzle(axis_size, anchor_crop)
+
+    for _ in range(axis_size**2-1):
+        candidates = puzzle.next_candidates
+        target, new, orient = choose_next(candidates, match_prob_dict)
+        puzzle.add_piece(target, new, orient)
