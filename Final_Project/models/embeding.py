@@ -9,7 +9,7 @@ import keras
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, TensorBoard, EarlyStopping
 from keras_preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import train_test_split
-from Final_Project.models.Preprocesses import for_embeding, pre_proccess_data
+from Final_Project.models.Preprocesses import for_embeding, pre_process_data
 
 
 def create_model(weight_decay = 6e-3):
@@ -56,9 +56,9 @@ def create_model(weight_decay = 6e-3):
 paths = [r'C:/Users/amoscoso/Documents/Technion/deeplearning/Deep_learning_hw/FinalProject/data/images',
          r'C:/Users/amoscoso/Documents/Technion/deeplearning/Deep_learning_hw/FinalProject/data/documents']
 
-t = pre_proccess_data(paths,
-                      cuts=5,
-                      shape=32)
+t = pre_process_data(paths,
+                     cuts=5,
+                     shape=32)
 x_train , y_train = for_embeding(t)
 print(x_train.shape)
 #%%

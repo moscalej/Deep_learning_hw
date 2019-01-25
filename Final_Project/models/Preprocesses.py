@@ -29,19 +29,23 @@ from numba import njit
 from sklearn.model_selection import train_test_split
 
 
-
-def pre_proccess_data(input_path, cuts, shape=32):
+def pre_process_data(input_path: str, cuts: int, shape: int = 32) -> np.ndarray:
     """
-    this function will pre proccess the data making a list of touples where
+    this function will pre process the data making a list of touples where
      it will return an 3d array [image,section,tag]
-    :param input_path:
-    :param cuts: # todo make list
+
+    :param shape: Shape of the picture segment resize
+    :type shape: int
+
+    :param input_path: path of the folder where the pictures are store
+    :type input_path: str list
+    :param cuts: #
     :return:
     """
     images = []
     for files_path in input_path:
 
-        files = os.listdir(files_path) # TODO paths
+        files = os.listdir(files_path)  # TODO paths
         for f in files:
             file_path = f'{files_path}/{f}'
             im = cv2.imread(file_path)
@@ -57,12 +61,41 @@ def pre_proccess_data(input_path, cuts, shape=32):
                     crop = im[h * frac_h:(h + 1) * frac_h, w * frac_w:(w + 1) * frac_w]
                     crop_rehaped = cv2.resize(crop, (shape, shape))
                     i = i + 1
-                    image.append([crop_rehaped, i ,number_to_angle(i,cuts)])
+                    image.append([crop_rehaped, i, number_to_angle(i, cuts)])
             images.append(image)
     return np.array(images)
 
+
 @njit()
-def asCartesian(rthetaphi):
+def niegbors(number: int, number_sectors: int) -> [int, int, int, int]:
+    """
+    This function will give each picture there neigbors
+    :param number: where in the grid
+    :type number: int
+    :param number_sectors: number of cuts
+    :type number_sectors: int
+    :return: Who is the nigbors -1 means no one (up, down, left, right)
+    :rtype: list
+    """
+    col = number % number_sectors
+    row = number // number_sectors
+    nieg = [row - 1, row + 1, col - 1, col + 1]
+    if row == number_sectors:
+        nieg[1] = -1
+    if col == number_sectors:
+        nieg[3] = -1
+    return nieg
+
+
+@njit()
+def asCartesian(rthetaphi: [np.float, np.float, np.float]) -> [np.float, np.float, np.float]:
+    """
+
+    :param rthetaphi: [np.float, np.float, np.float]
+    :type rthetaphi:
+    :return:
+    :rtype:
+    """
     # takes list rthetaphi (single coord)
     r = rthetaphi[0]
     theta = rthetaphi[1] * np.pi / 180  # to radian
@@ -74,7 +107,7 @@ def asCartesian(rthetaphi):
 
 
 @njit()
-def number_to_angle(number, number_sectors):
+def number_to_angle(number: int, number_sectors: int) -> [np.float, np.float, np.float]:
     """
     Gives cordinates for a picture given sector
     :param number:
@@ -86,6 +119,8 @@ def number_to_angle(number, number_sectors):
     theta = number // number_sectors
     phi = number % number_sectors
     return asCartesian([1, angles_theta[theta], angles_phi[phi]])
+
+
 #
 # @njit()
 # def angle_to_number(angle,number_sectors):
@@ -98,21 +133,18 @@ def number_to_angle(number, number_sectors):
 #     pass
 #     return 0
 
-def for_embeding(data,normalize =True):
-    data_m = data.reshape( [data.shape[0]*data.shape[1],data.shape[2]])
-    x = np.array(list(map(np.array,data_m[:,0])))
-    y =np.array(list(map(np.array,data_m[:,2])))
-    if normalize :
-        x_mean = np.mean(x,axis=(0, 1,2))
-        x_std = np.std(x,axis=(0, 1,2))
-        x_center = (x - x_mean)/(x_std+1e-9)
+def for_embeding(data, normalize=True):
+    data_m = data.reshape([data.shape[0] * data.shape[1], data.shape[2]])
+    x = np.array(list(map(np.array, data_m[:, 0])))
+    y = np.array(list(map(np.array, data_m[:, 2])))
+    if normalize:
+        x_mean = np.mean(x, axis=(0, 1, 2))
+        x_std = np.std(x, axis=(0, 1, 2))
+        x_center = (x - x_mean) / (x_std + 1e-9)
     else:
         x_center = x
     x_center = np.expand_dims(x_center, axis=3)
-    x_center,_,y,_ =train_test_split(x_center,y ,test_size =0)
-    return x_center , y
-
+    x_center, _, y, _ = train_test_split(x_center, y, test_size=0)
+    return x_center, y
 
     # isinstance(data,np.ndarray)
-
-
