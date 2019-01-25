@@ -30,11 +30,14 @@ from sklearn.model_selection import train_test_split
 
 
 #  TODO: pre-process for inference (unknown cuts, OOD samples, already shredded)
-def pre_process_data(input_path: str, cuts: int, shape: int = 32) -> np.ndarray:
+# def pre_process_data(input_path: str, cuts: int, shape: int = 32) -> np.ndarray:
+def pre_process_data(input_path: str, cuts: int, shape: int = 32, normalize: bool = True) -> np.ndarray:
     """
     this function will pre process the data making a list of touples where
      it will return an 3d array [image,section,tag]
 
+    :param normalize:
+    :type normalize:
     :param shape: Shape of the picture segment resize
     :type shape: int
 
@@ -44,27 +47,36 @@ def pre_process_data(input_path: str, cuts: int, shape: int = 32) -> np.ndarray:
     :return:
     """
     images = []
+    images_uncut = []
     for files_path in input_path:
 
         files = os.listdir(files_path)  # TODO paths
         for f in files:
             file_path = f'{files_path}/{f}'
-            im = cv2.imread(file_path)
-            im = cv2.cvtColor(im, cv2.COLOR_RGB2GRAY)
-            height = im.shape[0]
-            width = im.shape[1]
-            frac_h = height // cuts
-            frac_w = width // cuts
-            i = 0
-            image = []
-            for h in range(cuts):
-                for w in range(cuts):
-                    crop = im[h * frac_h:(h + 1) * frac_h, w * frac_w:(w + 1) * frac_w]
-                    crop_reshaped = cv2.resize(crop, (shape, shape))
-                    crop_reshaped = crop_reshaped
-                    i = i + 1
-                    image.append([crop_reshaped, i, number_to_angle(i, cuts), neighbours(i, cuts)])
-            images.append(image)
+            im_uncut = cv2.imread(file_path)
+            im_uncut = cv2.cvtColor(im_uncut, cv2.COLOR_RGB2GRAY)
+            images_uncut.append(cv2.resize(im_uncut, (shape * cuts, shape * cuts)))
+    x = np.array(images_uncut)
+
+    if normalize:
+        x_mean = np.mean(x, axis=(0, 1, 2))
+        x_std = np.std(x, axis=(0, 1, 2))
+        x_center = (x - x_mean) / (x_std + 1e-9)
+
+    for im in x:
+        height = im.shape[0]
+        width = im.shape[1]
+        frac_h = height // cuts
+        frac_w = width // cuts
+        i = 0
+        image = []
+        for h in range(cuts):
+            for w in range(cuts):
+                crop = im[h * frac_h:(h + 1) * frac_h, w * frac_w:(w + 1) * frac_w]
+                crop_rehaped = cv2.resize(crop, (shape, shape))
+                i = i + 1
+                image.append([crop_rehaped, i, number_to_angle(i, cuts), niegbors(i, cuts)])
+        images.append(image)
     return np.array(images)
 
 

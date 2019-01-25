@@ -6,11 +6,14 @@ import keras
 
 def create_arch_discrimitor(ud_lr: str = "up", weight_decay: float = 5e-5) -> keras.Model:
     weight_decay = weight_decay
-    input_1 = kl.Input(shape=[32, 32, 1])
+
     input_2 = kl.Input(shape=[32, 32, 1])
     if ud_lr == 'up':
-        up_down = kl.concatenate([input_1, input_2], axis=1)
+        input_1 = kl.Input(shape=[32, 64, 1])
+        up_down = input_1
+
     else:
+        input_1 = kl.Input(shape=[32, 32, 1])
         up_down = kl.concatenate([input_1, input_2], axis=3)
 
     encoder = kl.Conv2D(32, (3, 3),
@@ -62,10 +65,12 @@ def create_arch_discrimitor(ud_lr: str = "up", weight_decay: float = 5e-5) -> ke
     encoder = kl.Dropout(0.4)(encoder)
     if ud_lr in ['up']:
         out = kl.Dense(2, activation='softmax', kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
+        model = Model(inputs=[input_1], outputs=out)
+
     else:
         out = kl.Dense(5, activation='softmax', kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
+        model = Model(inputs=[input_1, input_2], outputs=out)
 
-    model = Model(inputs=[input_1, input_2], outputs=out)
 
     model.compile(loss=keras.losses.binary_crossentropy,
                   optimizer=keras.optimizers.Adam(lr=0.05, beta_1=0.9, beta_2=0.999),
