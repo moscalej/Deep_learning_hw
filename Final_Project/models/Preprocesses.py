@@ -61,7 +61,7 @@ def pre_process_data(input_path: str, cuts: int, shape: int = 32) -> np.ndarray:
                     crop = im[h * frac_h:(h + 1) * frac_h, w * frac_w:(w + 1) * frac_w]
                     crop_rehaped = cv2.resize(crop, (shape, shape))
                     i = i + 1
-                    image.append([crop_rehaped, i, number_to_angle(i, cuts)])
+                    image.append([crop_rehaped, i, number_to_angle(i, cuts), niegbors(i, cuts)])
             images.append(image)
     return np.array(images)
 
