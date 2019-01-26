@@ -1,5 +1,7 @@
+from Deep_learning_hw.Final_Project.models import Preprocesses
 import numpy as np
 from keras.models import Sequential, Model
+from collections import defaultdict
 
 
 class Puzzle:
@@ -9,7 +11,7 @@ class Puzzle:
         self.cyclic_puzzle[0, 0] = first_crop
         self.axis_size = axis_size
         self.relative_dims = dict({3: 0, 6: 0, 9: 0, 12: 0})
-        self.next_candidates = {first_crop: set(3, 6, 9, 12)}
+        self.next_candidates = {first_crop: set(3, 6, 9, 12)}  # keys: puzzle_pieces, values: orientation not used
         self.relative_coo[first_crop] = (0, 0)  # (right, left)
         self.neighbours_def = [(1, 0), (0, -1), (-1, 0), (0, 1)]
         self.directions_def = [3, 6, 9, 12]
@@ -46,7 +48,6 @@ class Puzzle:
                 self.next_candidates[crop_ind].remove((6 + direct) % 12)  # remove opposite direction
             self.next_candidates[new_crop] = directs
 
-
     def get_neigh(self, absX, absY):
         neighbours = self.neighbours_def
         directions = self.directions_def
@@ -57,19 +58,42 @@ class Puzzle:
         return (relX % self.axis_size, relY % self.axis_size)
 
 
-def get_prob_dict(crop_list, matcher):
+def get_prob_dict(crop_list, matcher): alej
+    # output format = {crop_ind: {cand_ind: {orient: prob}}}
     neighbours_def = [(1, 0), (0, -1), (-1, 0), (0, 1)]
     directions_def = set([3, 6, 9, 12])
     crop_num = len(crop_list)
-    prob_dict = dict()
+    prob_dict = defaultdict(int)
+    keys = []
+    tasks = []
     for crop_ind in range(crop_num):
-        prob_dict[crop_ind] = {}
-        for crop_cand_ind in range(crop_num):
-            prob_dict[crop_ind][crop_cand_ind] = {}
-            for direction in directions_def:
-                prob_dict[crop_ind][crop_cand_ind][direction] = matcher()
+        for cand_ind in range(crop_num):
+            for orient in directions_def:
+                keys.append([crop_ind, cand_ind, orient])
+                tasks.append(Preprocesses.stich(crop_list[crop_ind], crop_list[cand_ind], orient))
+    predicted = matcher.predict(tasks)
+    for pred, key in zip(predicted, keys):
 
 
+
+def choose_next(candidates, match_prob_dict):
+    if candidates == []:  # choose greedy
+        # todo smart choice
+        best_candidate = (chosen, None, None)
+    else:
+        best_candidate = (-1, -1, -1)
+        best_candidate_prob = 0
+        for candidate, prob in candidates.items():
+            if prob > best_candidate_prob:
+                best_candidate = prob
+                best_candidate = tuple(list(map(int, candidate.split('_'))))
+
+    return best_candidate
+
+
+def matcher_wrap(matcher, crop1, crop2, orient):
+    stiched = Preprocesses.stich(crop1, crop2, orient)
+    return matcher.predict(stiched)
 
 
 # High Level
@@ -78,10 +102,18 @@ def Assemble(crop_list: list, matcher: Model) -> np.array:
 
     match_prob_dict = get_prob_dict(crop_list, matcher)  # sorted dictionary
 
-    anchor_crop = get_top_match(dict_matches)
+    anchor_crop, _, _ = choose_next([], match_prob_dict)
     puzzle = Puzzle(axis_size, anchor_crop)
 
-    for _ in range(axis_size**2-1):
+    for _ in range(axis_size ** 2 - 1):
         candidates = puzzle.next_candidates
         target, new, orient = choose_next(candidates, match_prob_dict)
         puzzle.add_piece(target, new, orient)
+
+
+def predict(path_list, matcher, shape):
+    results = []
+    for path in path_list:
+        crops = Preprocesses.preprocess_inference(path, shape)  # todo: size handling
+        results.append(Assemble(crops, matcher))
+    pass
