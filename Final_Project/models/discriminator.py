@@ -11,15 +11,14 @@ def create_arch_discrimitor(ud_lr: str = "up", weight_decay: float = 5e-5, input
     input_2 = kl.Input(shape=[input_size, input_size, 1])
     input_3 = kl.Input(shape=[input_size, input_size, 1])
     if ud_lr == 'up':
-        input_1 = kl.Input(shape=[input_size, input_size*2, 1])
+        input_1 = kl.Input(shape=[input_size, input_size * 2, 1])
         up_down = input_1
     if ud_lr == 'grad':
-        input_1 = kl.Input(shape=[input_size, input_size*2, 3])
+        input_1 = kl.Input(shape=[input_size, input_size * 2, 3])
         up_down = input_1
 
     else:
         input_1 = kl.Input(shape=[input_size, input_size, 1])
-
 
         up_down = kl.concatenate([input_1, input_2, input_3], axis=3)
 
@@ -70,7 +69,7 @@ def create_arch_discrimitor(ud_lr: str = "up", weight_decay: float = 5e-5, input
     encoder = kl.BatchNormalization()(encoder)
     encoder = kl.LeakyReLU()(encoder)
     encoder = kl.Dropout(0.4)(encoder)
-    if ud_lr in ['grad','up']:
+    if ud_lr in ['grad', 'up']:
         out = kl.Dense(2, activation='sigmoid', kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
         model = Model(inputs=[input_1], outputs=out)
         model.compile(loss=keras.losses.categorical_crossentropy,
@@ -84,6 +83,27 @@ def create_arch_discrimitor(ud_lr: str = "up", weight_decay: float = 5e-5, input
         model.compile(loss=keras.losses.categorical_crossentropy,
                       optimizer=keras.optimizers.Adam(lr=0.05, beta_1=0.9, beta_2=0.999),
                       metrics=['accuracy'])
+    model.summary()
+    return model
+
+
+def border_compare(weight_decay: float = 5e-5, input_size: int = 32, optimizer: str = 'adam') -> keras.Model:
+    real = kl.Input([input_size , 4])
+    flat = kl.Flatten()(real)
+    encoder = kl.Dense(160, kernel_regularizer=keras.regularizers.l2(weight_decay))(flat)
+    encoder = kl.LeakyReLU()(encoder)
+    encoder = kl.Dropout(0.1)(encoder)
+    encoder = kl.Dense(160, kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
+    encoder = kl.LeakyReLU()(encoder)
+    encoder = kl.Dropout(0.1)(encoder)
+    encoder = kl.Dense(160, kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
+    encoder = kl.LeakyReLU()(encoder)
+    encoder = kl.Dropout(0.1)(encoder)
+    encoder = kl.Dense(2, activation='softmax', kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
+    model = Model(inputs=[real], outputs=encoder)
+    model.compile(loss=keras.losses.categorical_crossentropy,
+                  optimizer=optimizer,
+                  metrics=['accuracy'])
     model.summary()
     return model
 

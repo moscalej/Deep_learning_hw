@@ -60,25 +60,25 @@ def pre_process_data(input_path: list, cuts: int, shape: int = 32, normalize: bo
     return images
 
 
-@njit()
+# @njit()
 def stich(img1, img2, orient):
     # (up, down, left, right)
     if orient == 0:
         img1_top = img1[0:2, :]
         img2_bottom = img2[-2:, :]
-        stiched = np.rot90(np.concatenate((img2_bottom, img1_top), axis=0))
-    if orient == 1:
+        stiched = np.rot90(np.concatenate([img2_bottom, img1_top], axis=0))
+    elif orient == 1:
         img1_bottom = img1[-2:, :]
         img2_top = img2[0:2, :]
-        stiched = np.rot90(np.concatenate((img1_bottom, img2_top), axis=0))
-    if orient == 2:
+        stiched = np.rot90(np.concatenate([img1_bottom, img2_top], axis=0))
+    elif orient == 2:
         img1_left = img1[:, 0:2]
         img2_right = img2[:, -2:]
-        stiched = np.concatenate((img1_left, img2_right), axis=1)
-    if orient == 3:
+        stiched = np.concatenate([img2_right, img1_left], axis=1)
+    elif orient == 3:
         img1_right = img1[:, -2:]
         img2_left = img2[:, 0:2]
-        stiched = np.concatenate((img1_right, img2_left), axis=1)
+        stiched = np.concatenate([img1_right, img2_left], axis=1)
     else:
         return "error"
     return stiched
@@ -118,34 +118,35 @@ def choose_false_crops(image, target_crop, options, size):
     top_ind, down_ind, left_ind, right_ind = 0, 0, 0, 0
     combined_inds = [top_ind, down_ind, left_ind, right_ind]
     for i in range(size):
-        orient = np.argmax(diss_top[top_ind], diss_down[down_ind], diss_left[left_ind], diss_right[right_ind])
+        orient = int(np.argmax([diss_top[top_ind][0], diss_down[down_ind][0], diss_left[left_ind][0], diss_right[right_ind][0]]))
         chosen_crop_ind = combined_list[orient][combined_inds[orient]][1]
         chosen_crop = image[chosen_crop_ind][0]
         combined_inds[orient] += 1
-        chosen_crops.append(chosen_crop, orient)
+        chosen_crops.append([chosen_crop, orient])
     return chosen_crops
 
 
+
 # @njit()
-def processed2train(images: np.ndarray, axis_size) -> list:
+def processed2train(images: np.ndarray, axis_size) -> tuple:
     trainX = []
     trainY = []
     for im_ind, image in enumerate(images):
-        OOD_inds = (np.random.choice([i for i in range(len(images)) if i != im_ind], size=axis_size))
+        OOD_inds = (x for x in np.random.choice([i for i in range(len(images)) if i != im_ind], size=axis_size))
         crop_with_OOD = np.random.choice(range(len(image)), size=axis_size)
         for crop_ind, crop in enumerate(image):
             neighs = crop[3]  # neighbours(up, down, left, right)
             num_neigh = np.count_nonzero(np.array(neighs) + 1)
-            true_crops_inds = [(neigh_ind, orient) for orient, neigh_ind in enumerate(neighs) if neigh_ind != -1]
             true_crops = [(image[neigh_ind][0], orient) for orient, neigh_ind in enumerate(neighs) if neigh_ind != -1]
-            neigh_inds = [neigh for (neigh, _) in true_crops if true_crops_inds != -1]
-            # false_crops = np.random.choice(,
-            #                                size=num_neigh)
+            true_crops_inds = [(neigh_ind, orient) for orient, neigh_ind in enumerate(neighs) if neigh_ind != -1]
+            neigh_inds = [neigh for (neigh, _) in true_crops_inds if neigh != -1]
+            false_crops_inds = np.random.choice([i for i in range(len(image)) if i not in set(neigh_inds) | {crop_ind}],
+                                                size=num_neigh)
             false_crops = choose_false_crops(image, crop[0],
-                                             [i for i in range(len(image)) if i not in [neigh_inds + [crop_ind]]],
-                                             axis_size)
-            if crop_ind in crop_with_OOD:
-                false_crops[0] = next(OOD_inds)
+                                             [i for i in range(len(image)) if i not in set(neigh_inds) | {crop_ind}],
+                                             num_neigh)
+            # if crop_ind in crop_with_OOD:
+            #     false_crops[0] = images[next(OOD_inds)][int(np.random.choice(range(axis_size ** 2), size=1))]
 
             # add true samples
             for (true_c, orient) in true_crops:
