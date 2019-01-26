@@ -112,10 +112,10 @@ def choose_false_crops(image, target_crop, options, size):
         diss_down.append((similarity(target_edge_down, crop_down), crop_ind))
         diss_left.append((similarity(target_edge_left, crop_left), crop_ind))
         diss_right.append((similarity(target_edge_right, crop_right), crop_ind))
-    diss_top.sort(key=lambda x: x[0])
-    diss_down.sort(key=lambda x: x[0])
-    diss_left.sort(key=lambda x: x[0])
-    diss_right.sort(key=lambda x: x[0])
+    diss_top.sort(key=lambda x: x[0],reverse=True)
+    diss_down.sort(key=lambda x: x[0],reverse=True)
+    diss_left.sort(key=lambda x: x[0],reverse=True)
+    diss_right.sort(key=lambda x: x[0],reverse=True)
     combined_list = [diss_top, diss_down, diss_left, diss_right]
     chosen_crops = []
     top_ind, down_ind, left_ind, right_ind = 0, 0, 0, 0
@@ -307,3 +307,7 @@ def for_embeding(data, normalize=True):
     return x_center, y
 
     # isinstance(data,np.ndarray)
+
+
+def preprocess_inference(images, shape):
+    return None

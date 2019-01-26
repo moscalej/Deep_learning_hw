@@ -1,12 +1,12 @@
 import os
 import cv2
-import yaml
-from Final_Project.models.Preprocesses import reshape_all
+from Final_Project.models.Algorithm_sketch import predict_2
 
 
 def predict(images):
     labels = []
-    images_crop = reshape_all(images, 40)
+
+    labels = predict_2(images)
 
     return labels
 

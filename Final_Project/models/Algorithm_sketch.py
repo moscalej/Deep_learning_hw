@@ -4,18 +4,22 @@ from Final_Project.models import Preprocesses
 import numpy as np
 from keras.models import Sequential, Model
 from collections import defaultdict
-
+import yaml
+from Final_Project.models.Preprocesses import reshape_all
+from keras.models import load_model
 clock2orient = {12: 0, 6: 1, 9: 2, 3: 3}
+orient2clock = {value: key for key, value in clock2orient.items()}
 
 
 class Puzzle:
     def __init__(self, axis_size: int, first_crop: int):
 
-        self.cyclic_puzzle = np.ones(axis_size, axis_size) * -1
+        self.cyclic_puzzle = np.ones([axis_size, axis_size]) * -1
         self.cyclic_puzzle[0, 0] = first_crop
         self.axis_size = axis_size
         self.relative_dims = dict({3: 0, 6: 0, 9: 0, 12: 0})
         self.next_candidates = {first_crop: set([3, 6, 9, 12])}  # keys: puzzle_pieces, values: orientation not used
+        self.relative_coo = dict()
         self.relative_coo[first_crop] = (0, 0)  # (right, left)
         self.neighbours_def = [(1, 0), (0, -1), (-1, 0), (0, 1)]
         self.directions_def = [3, 6, 9, 12]
@@ -36,14 +40,14 @@ class Puzzle:
         neighbours = self.neighbours_def
         directions = self.directions_def
         (targetX, targetY) = self.relative_coo[target_crop]  # relative coo
-        for direct, (dX, dY) in enumerate(zip(directions, neighbours)):
+        for direct, (dX, dY) in zip(directions, neighbours):
             if direct != orientation:  # execute given orientation
                 continue
             self.relative_coo[new_crop] = (targetX + dX, targetY + dY)
             curr_dim = self.relative_dims[direct]
             if max(abs(dX * targetX), abs(dY * targetY)) == curr_dim:  # check if relative dimension expanded
                 self.relative_dims[direct] = self.relative_dims[direct] + 1
-            (absX, absY) = self._get_abs_coo(self.relative_coo[new_crop])
+            (absX, absY) = self._get_abs_coo(self.relative_coo[new_crop][0], self.relative_coo[new_crop][1])
             self.cyclic_puzzle[absX, absY] = new_crop  # put the piece in the puzzle
             neigh_tups = self._get_neigh(absX, absY)
             directs = set([3, 6, 9, 12])
@@ -57,8 +61,8 @@ class Puzzle:
         rel_col = self.relative_dims[12]
         rel_row = -self.relative_dims[9]
 
-        for col in self.axis_size:
-            for row in self.axis_size:
+        for col in range(self.axis_size):
+            for row in range(self.axis_size):
                 label.append(self.cyclic_puzzle[self._get_abs_coo(rel_row, rel_col)])
                 rel_row += 1
             rel_col -= 1
@@ -69,7 +73,7 @@ class Puzzle:
     def _get_neigh(self, absX, absY):
         neighbours = self.neighbours_def
         directions = self.directions_def
-        return [(self.cyclic_puzzle[absX + dX, absY + dY], directions[ind]) for ind, (dX, dY) in enumerate(neighbours)
+        return [(self.cyclic_puzzle[(absX + dX) % self.axis_size, (absY + dY)% self.axis_size], directions[ind]) for ind, (dX, dY) in enumerate(neighbours)
                 if self.cyclic_puzzle[absX + dX, absY + dY] != -1]
 
     def _get_abs_coo(self, relX, relY):
@@ -105,7 +109,7 @@ def get_prob_dict(crop_list: list, matcher: Model) -> np.ndarray:
     return fast_fill_mat(predicted[:, 1], keys, results)
 
 
-# @njit()
+@njit()
 def fast_fill_mat(predic: np.ndarray, keys: list, results: np.ndarray) -> np.ndarray:
     """
     This method will fill a tensor with the probabilities of all the borders
@@ -146,7 +150,7 @@ def choose_next(candidates, match_prob_dict):
                 best_prob = options[best_crop]
                 if best_prob > best_candidate_prob:
                     best_candidate_prob = best_prob
-                    best_candidate = tuple(candidate, best_crop, orient)
+                    best_candidate = tuple([candidate, best_crop, orient2clock[orient]])
 
     return best_candidate
 
@@ -157,7 +161,7 @@ def matcher_wrap(matcher, crop1, crop2, orient):
 
 
 # High Level
-def Assemble(crop_list: list, matcher: Model) -> np.array:
+def assemble(crop_list: list, matcher: Model) -> np.array:
     crop_num = len(crop_list)
     axis_size = int(np.sqrt(crop_num))
 
@@ -173,9 +177,10 @@ def Assemble(crop_list: list, matcher: Model) -> np.array:
     return puzzle.get_puzzle_label()
 
 
-def predict(path_list, matcher, shape):
-    results = []
-    for path in path_list:
-        crops = Preprocesses.preprocess_inference(path, shape)  # todo: size handling
-        results.append(Assemble(crops, matcher))
-    pass
+def predict_2(images ):
+    with open(r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\parameters.YAML')as fd: #todo
+        param = yaml.load(fd)
+    model = load_model(param['Discri']['path'])
+    crops = reshape_all(images, 64)
+    return assemble(crops, model)
+
