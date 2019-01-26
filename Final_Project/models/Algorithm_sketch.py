@@ -95,11 +95,11 @@ def get_prob_dict(crop_list: list, matcher: Model) -> np.ndarray:
     for crop_ind in range(crop_num):
         for cand_ind in range(crop_num):
             for orient in directions_def:
-                keys.append([crop_ind, cand_ind, orient])
+                keys.append(tuple([crop_ind, cand_ind, orient]))
                 tasks.append(Preprocesses.stich(crop_list[crop_ind], crop_list[cand_ind], orient))
 
     tasks = np.array(tasks)
-    results = np.zeros([crop_num, crop_num, 4], dtype=np.float)
+    results = np.zeros([crop_num, crop_num, 4], dtype=np.float64)
     print(f'Shape of task {tasks.shape}')
     predicted = matcher.predict(tasks)
     return fast_fill_mat(predicted[:, 1], keys, results)
