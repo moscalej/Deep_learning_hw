@@ -12,8 +12,8 @@ import seaborn as sns
 # %%
 SHAPE = 40
 path = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\data\images'
-path_D = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\data\documents'
-a = pre_process_data([path,path_D], shape=SHAPE, cuts=5)
+# path_D = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\data\documents'
+a = pre_process_data([path], shape=SHAPE, cuts=5)
 # trainX_0,trainX_1, trainY = processed2train_2_chanel(a,5)
 trainX, trainY = processed2train(a, 5)
 # %%
@@ -24,7 +24,7 @@ x_mean = np.mean(trainX, axis=(0, 1, 2))
 x_std = np.std(trainX, axis=(0, 1, 2))
 x_center = (trainX - x_mean) / (x_std + 1e-9)
 #%%
-model.fit(x_center, trainY, batch_size=512, epochs=100, verbose=2, validation_split=0.2)
+model.fit(x_center, trainY, batch_size=512, epochs=10, verbose=2, validation_split=0.2)
 
 # %%
 y_hat = model.predict([trainX_0, trainX_1])
