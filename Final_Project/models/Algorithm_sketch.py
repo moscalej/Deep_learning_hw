@@ -5,6 +5,8 @@ import numpy as np
 from keras.models import Sequential, Model
 from collections import defaultdict
 
+clock2orient = {12: 0, 6: 1, 9: 2, 3: 3}
+
 
 class Puzzle:
     def __init__(self, axis_size: int, first_crop: int):
@@ -13,7 +15,7 @@ class Puzzle:
         self.cyclic_puzzle[0, 0] = first_crop
         self.axis_size = axis_size
         self.relative_dims = dict({3: 0, 6: 0, 9: 0, 12: 0})
-        self.next_candidates = {first_crop: set(3, 6, 9, 12)}  # keys: puzzle_pieces, values: orientation not used
+        self.next_candidates = {first_crop: set([3, 6, 9, 12])}  # keys: puzzle_pieces, values: orientation not used
         self.relative_coo[first_crop] = (0, 0)  # (right, left)
         self.neighbours_def = [(1, 0), (0, -1), (-1, 0), (0, 1)]
         self.directions_def = [3, 6, 9, 12]
@@ -44,7 +46,7 @@ class Puzzle:
             (absX, absY) = self.get_abs_coo(self.relative_coo[new_crop])
             self.cyclic_puzzle[absX, absY] = new_crop  # put the piece in the puzzle
             neigh_tups = self.get_neigh(absX, absY)
-            directs = {3, 6, 9, 12}
+            directs = set([3, 6, 9, 12])
             for (crop_ind, direct) in neigh_tups:
                 directs.remove(direct)
                 self.next_candidates[crop_ind].remove((6 + direct) % 12)  # remove opposite direction
@@ -105,19 +107,30 @@ def fast_fill_mat(predic: np.ndarray, keys: list, results: np.ndarray) -> np.nda
     return results
 
 
-
-
 def choose_next(candidates, match_prob_dict):
-    if candidates == []:  # choose greedy
-        # todo smart choice
-        best_candidate = (chosen, None, None)
+    best_candidate = (-1, -1, -1)
+    best_candidate_prob = 0
+    if candidates == []:  # choose greedy  # todo smart choice
+        for candidate_ind in range(match_prob_dict.shape[0]):
+            candidate = match_prob_dict[candidate_ind]  # candidate is a matrix num_crops X directions
+            max_matches_inds = np.argmax(candidate, axis=0)
+            max_matches = candidate[max_matches_inds]  # prob_list
+            mean_match_prob = np.mean(max_matches)
+            if mean_match_prob > best_candidate_prob:
+                best_candidate_prob = mean_match_prob
+                best_candidate = (candidate_ind, None, None)
+
     else:
-        best_candidate = (-1, -1, -1)
-        best_candidate_prob = 0
-        for candidate, prob in candidates.items():
-            if prob > best_candidate_prob:
-                best_candidate = prob
-                best_candidate = tuple(list(map(int, candidate.split('_'))))
+        for candidate, clocks in candidates.items():
+            candidate_mat = match_prob_dict[candidate, :, :]
+            for clock in clocks:
+                orient = clock2orient[clock]
+                options = candidate_mat[:, orient]
+                best_crop = np.argmax(options)
+                best_prob = options[best_crop]
+                if best_prob > best_candidate_prob:
+                    best_candidate_prob = best_prob
+                    best_candidate = tuple(candidate, best_crop, orient)
 
     return best_candidate
 
@@ -129,7 +142,8 @@ def matcher_wrap(matcher, crop1, crop2, orient):
 
 # High Level
 def Assemble(crop_list: list, matcher: Model) -> np.array:
-    axis_size = int(np.sqrt(len(crop_list)))
+    crop_num = len(crop_list)
+    axis_size = int(np.sqrt(crop_num))
 
     match_prob_dict = get_prob_dict(crop_list, matcher)  # sorted dictionary
 
