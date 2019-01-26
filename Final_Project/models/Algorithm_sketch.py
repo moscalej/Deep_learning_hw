@@ -1,4 +1,6 @@
-from Deep_learning_hw.Final_Project.models import Preprocesses
+from numba import jit, njit
+
+from Final_Project.models import Preprocesses
 import numpy as np
 from keras.models import Sequential, Model
 from collections import defaultdict
@@ -58,12 +60,18 @@ class Puzzle:
         return (relX % self.axis_size, relY % self.axis_size)
 
 
-def get_prob_dict(crop_list, matcher): alej
-    # output format = {crop_ind: {cand_ind: {orient: prob}}}
-    neighbours_def = [(1, 0), (0, -1), (-1, 0), (0, 1)]
-    directions_def = set([3, 6, 9, 12])
+def get_prob_dict(crop_list: list, matcher: Model) -> np.ndarray:
+    """
+    Build a probability model for ech picture
+    :param crop_list:
+    :type crop_list:
+    :param matcher:
+    :type matcher:
+    :return:
+    :rtype:
+    """
+    directions_def = [0, 1, 2, 3]  # [up, down, left, right]
     crop_num = len(crop_list)
-    prob_dict = defaultdict(int)
     keys = []
     tasks = []
     for crop_ind in range(crop_num):
@@ -71,8 +79,31 @@ def get_prob_dict(crop_list, matcher): alej
             for orient in directions_def:
                 keys.append([crop_ind, cand_ind, orient])
                 tasks.append(Preprocesses.stich(crop_list[crop_ind], crop_list[cand_ind], orient))
+
+    tasks = np.array(tasks)
+    results = np.zeros([crop_num, crop_num, 4], dtype=np.float)
+    print(f'Shape of task {tasks.shape}')
     predicted = matcher.predict(tasks)
-    for pred, key in zip(predicted, keys):
+    return fast_fill_mat(predicted[:, 1], keys, results)
+
+
+@njit()
+def fast_fill_mat(predic: np.ndarray, keys: list, results: np.ndarray) -> np.ndarray:
+    """
+    This method will fill a tensor with the probabilities of all the borders
+    :param predic:
+    :type predic:
+    :param keys:
+    :type keys:
+    :param results:
+    :type results:
+    :return:
+    :rtype:
+    """
+    for pred, key in zip(predic, keys):
+        results[key] = pred
+    return results
+
 
 
 

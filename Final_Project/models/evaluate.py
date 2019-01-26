@@ -1,10 +1,15 @@
 import os
 import cv2
+import yaml
+from Final_Project.models.Preprocesses import reshape_all
+
 
 def predict(images):
     labels = []
-    # here comes your code to predict the labels of the images
+    images_crop = reshape_all(images, 40)
+
     return labels
+
 
 def evaluate(file_dir='example/'):
     files = os.listdir(file_dir)
@@ -17,5 +22,3 @@ def evaluate(file_dir='example/'):
 
     Y = predict(images)
     return Y
-
-

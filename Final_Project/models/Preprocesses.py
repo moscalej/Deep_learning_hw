@@ -53,11 +53,14 @@ def pre_process_data(input_path: list, cuts: int, shape: int = 32, normalize: bo
             for w in range(cuts):
                 crop = im[h * frac_h:(h + 1) * frac_h, w * frac_w:(w + 1) * frac_w]
                 crop_rehaped = cv2.resize(crop, (shape, shape))
-                i = i + 1
                 image.append([crop_rehaped, i, number_to_angle(i, cuts), neighbours(i, cuts)])
+                i = i + 1
         images.append(image)
     # return np.array(images) # todo back to array
     return images
+
+def reshape_all(images:list,sise:int)->list:
+    return list(map(lambda x: cv2.resize(x,(sise,sise)),images))
 
 
 # @njit()
@@ -118,7 +121,8 @@ def choose_false_crops(image, target_crop, options, size):
     top_ind, down_ind, left_ind, right_ind = 0, 0, 0, 0
     combined_inds = [top_ind, down_ind, left_ind, right_ind]
     for i in range(size):
-        orient = int(np.argmax([diss_top[top_ind][0], diss_down[down_ind][0], diss_left[left_ind][0], diss_right[right_ind][0]]))
+        orient = int(
+            np.argmax([diss_top[top_ind][0], diss_down[down_ind][0], diss_left[left_ind][0], diss_right[right_ind][0]]))
         chosen_crop_ind = combined_list[orient][combined_inds[orient]][1]
         chosen_crop = image[chosen_crop_ind][0]
         combined_inds[orient] += 1
@@ -126,9 +130,8 @@ def choose_false_crops(image, target_crop, options, size):
     return chosen_crops
 
 
-
 # @njit()
-def processed2train(images: np.ndarray, axis_size) -> tuple:
+def processed2train(images: list, axis_size) -> tuple:
     trainX = []
     trainY = []
     for im_ind, image in enumerate(images):
@@ -158,7 +161,7 @@ def processed2train(images: np.ndarray, axis_size) -> tuple:
                 trainX.append(stich(crop[0], false_c, orient_))
                 trainY.append(0)
     trainX = np.array(trainX)
-    trainY = to_categorical(trainY,2)
+    trainY = to_categorical(trainY, 2)
     trainX, _, trainY, _ = train_test_split(trainX, trainY, test_size=0)
 
     return trainX, trainY
@@ -195,7 +198,6 @@ def processed2train_2_chanel(images: list, axis_size) -> tuple:  # todo back to 
                 trainY.append(4)
                 break
 
-
     trainX_0 = np.expand_dims(np.array(trainX_0), axis=3)
     trainX_1 = np.expand_dims(np.array(trainX_1), axis=3)
     trainY = to_categorical(trainY, 5)
@@ -230,10 +232,16 @@ def neighbours(number: int, number_sectors: int) -> [int, int, int, int]:
     """
     col = number % number_sectors
     row = number // number_sectors
-    nieg = [row - 1, row + 1, col - 1, col + 1]
-    if row == number_sectors:
+
+    nieg = [number - number_sectors, number + number_sectors, number - 1, number + 1]
+
+    if row == 0:
+        nieg[0] = -1
+    if row == number_sectors - 1:
         nieg[1] = -1
-    if col == number_sectors:
+    if col == 0:
+        nieg[2] = -1
+    if col == number_sectors - 1:
         nieg[3] = -1
     return nieg
 
