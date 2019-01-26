@@ -1,15 +1,16 @@
 import cv2
 import numpy as np
 import os
+
+from keras.utils import to_categorical
 from numba import njit
 from sklearn.model_selection import train_test_split
 from scipy import signal
-import heapq
 
 
 #  TODO: pre-process for inference (unknown cuts, OOD samples, already shredded)
-# def pre_process_data(input_path: str, cuts: int, shape: int = 32) -> np.ndarray:
-def pre_process_data(input_path: str, cuts: int, shape: int = 32, normalize: bool = True) -> np.ndarray:
+# def pre_process_data(input_path: str, cuts: int, shape: int = 32) -> list:
+def pre_process_data(input_path: list, cuts: int, shape: int = 32, normalize: bool = True) -> list:
     """
     this function will pre process the data making a list of touples where
      it will return an 3d array [image,section,tag]
@@ -39,7 +40,7 @@ def pre_process_data(input_path: str, cuts: int, shape: int = 32, normalize: boo
     if normalize:
         x_mean = np.mean(x, axis=(0, 1, 2))
         x_std = np.std(x, axis=(0, 1, 2))
-        x_center = (x - x_mean) / (x_std + 1e-9)
+        x = (x - x_mean) / (x_std + 1e-9)
 
     for im in x:
         height = im.shape[0]
@@ -55,7 +56,8 @@ def pre_process_data(input_path: str, cuts: int, shape: int = 32, normalize: boo
                 i = i + 1
                 image.append([crop_rehaped, i, number_to_angle(i, cuts), neighbours(i, cuts)])
         images.append(image)
-    return np.array(images)
+    # return np.array(images) # todo back to array
+    return images
 
 
 @njit()
@@ -154,8 +156,50 @@ def processed2train(images: np.ndarray, axis_size) -> list:
             for (false_c, orient_) in false_crops:
                 trainX.append(stich(crop[0], false_c, orient_))
                 trainY.append(0)
+    trainX = np.array(trainX)
+    trainY = to_categorical(trainY,2)
+    trainX, _, trainY, _ = train_test_split(trainX, trainY, test_size=0)
 
     return trainX, trainY
+
+
+def processed2train_2_chanel(images: list, axis_size) -> tuple:  # todo back to array
+    trainX_0 = []
+    trainX_1 = []
+    trainY = []
+    for im_ind, image in enumerate(images):  # todo back to array
+        OOD_inds = (choi for choi in np.random.choice([i for i in range(len(images)) if i != im_ind], size=axis_size))
+        crop_with_OOD = np.random.choice(range(len(image)), size=axis_size)
+        for crop_ind, crop in enumerate(image):
+            neighs = crop[3]  # neighbours(up, down, left, right)
+            num_neigh = np.count_nonzero(np.array(neighs) + 1)
+            true_crops = [(neigh_ind, orient) for orient, neigh_ind in enumerate(neighs) if neigh_ind != -1]
+            neigh_inds = [neigh for (neigh, _) in true_crops if neigh != -1]
+            false_crops_inds = np.random.choice([i for i in range(len(image)) if i not in set(neigh_inds) | {crop_ind}],
+                                                size=num_neigh)
+            false_crops = [image[ind] for ind in false_crops_inds]
+            if crop_ind in crop_with_OOD:
+                false_crops[0] = images[next(OOD_inds)][int(np.random.choice(range(axis_size ** 2), size=1))]
+
+            # add true samples
+            for (true_c, orient) in true_crops:
+                trainX_0.append(crop[0])
+                trainX_1.append(image[true_c][0])
+                trainY.append(orient)
+
+            # add false samples
+            for false_c in false_crops:
+                trainX_0.append(crop[0])
+                trainX_1.append(false_c[0])
+                trainY.append(4)
+                break
+
+
+    trainX_0 = np.expand_dims(np.array(trainX_0), axis=3)
+    trainX_1 = np.expand_dims(np.array(trainX_1), axis=3)
+    trainY = to_categorical(trainY, 5)
+    trainX_0, _, trainX_, _, trainY, _ = train_test_split(trainX_0, trainX_1, trainY, test_size=0)
+    return trainX_0, trainX_1, trainY
 
 
 # @njit()
