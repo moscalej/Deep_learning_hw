@@ -43,23 +43,39 @@ class Puzzle:
             curr_dim = self.relative_dims[direct]
             if max(abs(dX * targetX), abs(dY * targetY)) == curr_dim:  # check if relative dimension expanded
                 self.relative_dims[direct] = self.relative_dims[direct] + 1
-            (absX, absY) = self.get_abs_coo(self.relative_coo[new_crop])
+            (absX, absY) = self._get_abs_coo(self.relative_coo[new_crop])
             self.cyclic_puzzle[absX, absY] = new_crop  # put the piece in the puzzle
-            neigh_tups = self.get_neigh(absX, absY)
+            neigh_tups = self._get_neigh(absX, absY)
             directs = set([3, 6, 9, 12])
             for (crop_ind, direct) in neigh_tups:
                 directs.remove(direct)
                 self.next_candidates[crop_ind].remove((6 + direct) % 12)  # remove opposite direction
             self.next_candidates[new_crop] = directs
 
-    def get_neigh(self, absX, absY):
+    def get_puzzle_label(self):
+        label = []
+        rel_col = self.relative_dims[12]
+        rel_row = -self.relative_dims[9]
+
+        for col in self.axis_size:
+            for row in self.axis_size:
+                label.append(self.cyclic_puzzle[self._get_abs_coo(rel_row, rel_col)])
+                rel_row += 1
+            rel_col -= 1
+        return label
+
+
+
+    def _get_neigh(self, absX, absY):
         neighbours = self.neighbours_def
         directions = self.directions_def
         return [(self.cyclic_puzzle[absX + dX, absY + dY], directions[ind]) for ind, (dX, dY) in enumerate(neighbours)
                 if self.cyclic_puzzle[absX + dX, absY + dY] != -1]
 
-    def get_abs_coo(self, relX, relY):
+    def _get_abs_coo(self, relX, relY):
         return (relX % self.axis_size, relY % self.axis_size)
+
+
 
 
 def get_prob_dict(crop_list: list, matcher: Model) -> np.ndarray:
