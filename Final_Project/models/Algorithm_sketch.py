@@ -170,6 +170,7 @@ def Assemble(crop_list: list, matcher: Model) -> np.array:
         candidates = puzzle.next_candidates
         target, new, orient = choose_next(candidates, match_prob_dict)
         puzzle.add_piece(target, new, orient)
+    return puzzle.get_puzzle_label()
 
 
 def predict(path_list, matcher, shape):
