@@ -87,7 +87,7 @@ def get_prob_dict(crop_list: list, matcher: Model) -> np.ndarray:
     return fast_fill_mat(predicted[:, 1], keys, results)
 
 
-@njit()
+# @njit()
 def fast_fill_mat(predic: np.ndarray, keys: list, results: np.ndarray) -> np.ndarray:
     """
     This method will fill a tensor with the probabilities of all the borders
