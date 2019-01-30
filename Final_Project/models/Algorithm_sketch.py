@@ -1,20 +1,25 @@
+# %%
 from numba import jit, njit
-
-from Final_Project.models import Preprocesses
+import numpy as np
+from Deep_learning_hw.Final_Project.models import Preprocesses
 import numpy as np
 from keras.models import Sequential, Model
 from collections import defaultdict
 import yaml
-from Final_Project.models.Preprocesses import reshape_all
+from Deep_learning_hw.Final_Project.models.Preprocesses import reshape_all
 from keras.models import load_model
-
+import cv2
+import matplotlib.pyplot as plt
+# %%
 clock2orient = {12: 0, 6: 1, 9: 2, 3: 3}
 orient2clock = {value: key for key, value in clock2orient.items()}
+clock2str = {12: 'above', 6: 'below', 9: 'left', 3: 'right'}
+orient2str = {0: 'above', 1: 'below', 2: 'left', 3: 'right'}
 
 
 class Puzzle:
     def __init__(self, axis_size: int, first_crop: int):
-
+        print(f"Puzzle started with {first_crop}")
         self.cyclic_puzzle = np.ones([axis_size, axis_size]) * -1
         self.cyclic_puzzle[0, 0] = first_crop
         self.axis_size = axis_size
@@ -22,53 +27,61 @@ class Puzzle:
         self.next_candidates = {first_crop: set([3, 6, 9, 12])}  # keys: puzzle_pieces, values: orientation not used
         self.relative_coo = dict()
         self.relative_coo[first_crop] = (0, 0)  # (right, left)
-        self.neighbours_def = [(0, 1), (-1, 0), (0, -1), (1, 0)]
+        self.relative2ind = dict()
+        self.relative2ind[(0, 0)] = first_crop
+        self.neighbours_def = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         self.directions_def = [3, 6, 9, 12]
 
-    def add_piece(self, target_crop, new_crop: int, orientation: int) -> None:
+    def add_piece(self, attach2, _2attach: int, clock: int) -> None:
         """
         adds a piece to puzzle (relative coo and abs coo (cyclic_puzzle))
         updates next_candidates, relative dims
-        :param target_crop:
-        :type target_crop:
-        :param new_crop:
-        :type new_crop:
-        :param orientation:
-        :type orientation:
+        :param attach2:
+        :type attach2:
+        :param _2attach:
+        :type _2attach:
+        :param clock:
+        :type clock:
         :return:
         :rtype: None
         """
+        print(f"adding puzzle piece: {_2attach} {clock2str[clock]} to {attach2}")
         neighbours = self.neighbours_def
         directions = self.directions_def
-        (targetX, targetY) = self.relative_coo[target_crop]  # relative coo
+        (targetX, targetY) = self.relative_coo[attach2]  # relative coo
         for direct, (dX, dY) in zip(directions, neighbours):
-            if direct != orientation:  # execute given orientation
+            if direct != clock:  # execute given orientation
                 continue
-            self.relative_coo[new_crop] = (targetX + dX, targetY + dY)
+            self.relative_coo[_2attach] = (targetX + dX, targetY + dY)
+            self.relative2ind[(targetX + dX, targetY + dY)] = _2attach
             curr_dim = self.relative_dims[direct]
             if max(abs(dX * targetX), abs(dY * targetY)) == curr_dim:  # check if relative dimension expanded
                 self.relative_dims[direct] = self.relative_dims[direct] + 1
-            (absX, absY) = self._get_abs_coo(self.relative_coo[new_crop][0], self.relative_coo[new_crop][1])
-            self.cyclic_puzzle[absX, absY] = new_crop  # put the piece in the puzzle
+            (absX, absY) = self._get_abs_coo(self.relative_coo[_2attach][0], self.relative_coo[_2attach][1])
+            self.cyclic_puzzle[absX, absY] = _2attach  # put the piece in the puzzle
             neigh_tups = self._get_neigh(absX, absY)
             new_directs = set([3, 6, 9, 12])
             for (crop_ind, direct_) in neigh_tups:  # directions relative to new
                 new_directs.remove(direct_)
                 rem = (6 + direct_) % 12 if direct_ != 6 else 12
                 self.next_candidates[crop_ind].remove(rem)  # remove opposite direction
-            self.next_candidates[new_crop] = new_directs
+            self.next_candidates[_2attach] = new_directs
 
-    def get_puzzle_label(self):
+    def get_puzzle(self, mode='label'):
+        sorted = []
         label = []
-        rel_col = self.relative_dims[12]
         rel_row = -self.relative_dims[9]
-
-        for col in range(self.axis_size):
-            for row in range(self.axis_size):
-                label.append(self.cyclic_puzzle[self._get_abs_coo(rel_row, rel_col)])
-                rel_row += 1
-            rel_col -= 1
-        return label
+        for row in range(self.axis_size):
+            rel_col = -self.relative_dims[12]
+            for col in range(self.axis_size):
+                sorted.append(int(self.cyclic_puzzle[self._get_abs_coo(rel_row, rel_col)]))
+                label.append(int(self.relative2ind[(rel_row, rel_col)]))
+                rel_col += 1
+            rel_row += 1
+        if mode == 'label':
+            return label
+        else:
+            return sorted
 
     def _get_neigh(self, absX, absY):
         neighbours = self.neighbours_def
@@ -95,11 +108,19 @@ def get_prob_dict(crop_list: list, matcher: Model) -> np.ndarray:
     crop_num = len(crop_list)
     keys = []
     tasks = []
-    for crop_ind in range(crop_num):
-        for cand_ind in range(crop_num):
+
+    for _2attach in range(crop_num):
+        for attach2 in range(crop_num):
             for orient in directions_def:
-                keys.append(tuple([crop_ind, cand_ind, orient]))
-                tasks.append(Preprocesses.stich(crop_list[crop_ind], crop_list[cand_ind], orient))
+                keys.append(tuple([_2attach, attach2, orient]))
+                if _2attach == 12 and attach2 == 7 and orient2str[orient] == 'below':
+                    stiched_img = Preprocesses.stich(crop_list[attach2], crop_list[_2attach], orient)
+                    fig = plt.figure()
+                    fig.clf()
+                    fig.suptitle(f"Task: {_2attach} {orient2str[orient]} to {attach2}", fontsize=16)
+                    plt.imshow(stiched_img)
+                    plt.show()
+                tasks.append(Preprocesses.stich(crop_list[attach2], crop_list[_2attach], orient))
 
     tasks = np.array(tasks)
     results = np.zeros([crop_num, crop_num, 4], dtype=np.float64)
@@ -108,7 +129,7 @@ def get_prob_dict(crop_list: list, matcher: Model) -> np.ndarray:
     return fast_fill_mat(predicted[:, 1], keys, results)
 
 
-@njit()
+# @njit()
 def fast_fill_mat(predic: np.ndarray, keys: list, results: np.ndarray) -> np.ndarray:
     """
     This method will fill a tensor with the probabilities of all the borders
@@ -123,6 +144,7 @@ def fast_fill_mat(predic: np.ndarray, keys: list, results: np.ndarray) -> np.nda
     """
     for pred, key in zip(predic, keys):
         results[key] = pred
+    results /= results.sum(axis=1, keepdims=True) + 1e-20
     return results
 
 
@@ -131,26 +153,26 @@ def choose_next(candidates, match_prob_dict):
     best_candidate_prob = 0 - 1e-9
     if candidates == []:  # choose greedy  # todo smart choice
         for candidate_ind in range(match_prob_dict.shape[0]):
-            candidate = match_prob_dict[candidate_ind]  # candidate is a matrix num_crops X directions
-            max_matches_inds = np.argmax(candidate, axis=0)
-            max_matches = candidate[max_matches_inds]  # prob_list
+            attach2 = match_prob_dict[:,candidate_ind,:]  # candidate is a matrix num_crops X directions
+            max_matches_inds = np.argmax(attach2, axis=0)
+            max_matches = attach2[max_matches_inds]  # prob_list
             mean_match_prob = np.mean(max_matches)
             if mean_match_prob > best_candidate_prob:
                 best_candidate_prob = mean_match_prob
                 best_candidate = (candidate_ind, None, None)
-        match_prob_dict[:, best_candidate[0], :] = 0
+        match_prob_dict[best_candidate[0], :, :] = -1
     else:
-        for candidate, clocks in candidates.items():
-            candidate_mat = match_prob_dict[candidate, :, :]
+        for attach2, clocks in candidates.items():
+            _2attach_mat = match_prob_dict[:, attach2, :]
             for clock in clocks:
                 orient = clock2orient[clock]
-                options = candidate_mat[:, orient]
-                best_crop = np.argmax(options)
-                best_prob = options[best_crop]
+                options = _2attach_mat[:, orient]
+                _2attach = np.argmax(options)
+                best_prob = options[_2attach]
                 if best_prob > best_candidate_prob:
                     best_candidate_prob = best_prob
-                    best_candidate = tuple([candidate, best_crop, orient2clock[orient]])
-            match_prob_dict[:, best_candidate[1], :] = 0
+                    best_candidate = tuple([_2attach, attach2, orient2clock[orient]])
+        match_prob_dict[best_candidate[0], :, :] = -1
 
     return best_candidate
 
@@ -165,22 +187,92 @@ def assemble(crop_list: list, matcher: Model) -> np.array:
     crop_num = len(crop_list)
     axis_size = int(np.sqrt(crop_num))
 
-    match_prob_dict = get_prob_dict(crop_list, matcher)  # sorted dictionary
+    prob_tensor = get_prob_dict(crop_list, matcher)  # sorted dictionary
 
-    anchor_crop, _, _ = choose_next([], match_prob_dict)
+    anchor_crop, _, _ = choose_next([], prob_tensor)
     puzzle = Puzzle(axis_size, anchor_crop)
 
-    for _ in range(axis_size ** 2 - 1):
+    for ind in range(axis_size ** 2 - 1):
         candidates = puzzle.next_candidates
-        target, new, orient = choose_next(candidates, match_prob_dict)
-        puzzle.add_piece(target, new, orient)
-    return puzzle.get_puzzle_label()
+        _2attach, attach2, orient = choose_next(candidates, prob_tensor)
+        puzzle.add_piece(attach2, _2attach, orient)
+    print(puzzle.cyclic_puzzle)
+    return puzzle.get_puzzle()
 
 
-def predict_2(images):
+def predict_2(images, showimage=True):
     with open(
-            r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\parameters.YAML')as fd:  # todo
+            r'C:\Users\afinkels\Desktop\private\Technion\Master studies\Deep Learning\HW\hw_repo\Deep_learning_hw\Final_Project\parameters.YAML')as fd:  # todo
         param = yaml.load(fd)
     model = load_model(param['Discri']['path'])
     crops = reshape_all(images, 64)
-    return assemble(crops, model)
+    if showimage:
+        plot_crops(crops)
+    labels = assemble(crop_list=crops, matcher=model)
+    if showimage:
+        plot_in_order(labels, images)
+    return labels
+
+
+# test for assembler
+# assume puzzle
+# 0,1,2
+# 3,4,5,
+# 6,7,8
+# up - 0, down - 1, left - 2, right - 3
+def test_anssemble():
+    axis_size = 3
+    prob_tensor = np.zeros([9, 9, 4])
+    prob_tensor[0, [1, 3], [3, 1]] = 1
+    prob_tensor[1, [0, 4, 2], [2, 1, 3]] = 1
+    prob_tensor[2, [1, 5], [2, 1]] = 1
+    prob_tensor[3, [0, 4, 6], [0, 3, 1]] = 1
+    prob_tensor[5, [2, 4, 8], [0, 2, 1]] = 1
+    prob_tensor[6, [3, 7], [0, 3]] = 1
+    prob_tensor[7, [6, 4, 8], [2, 0, 3]] = 1
+    prob_tensor[8, [7, 5], [2, 0]] = 1
+    prob_tensor *= 0.9
+    prob_tensor[4, [3, 1, 5, 7], [2, 0, 3, 1]] = 1
+    anchor_crop, _, _ = choose_next([], prob_tensor)
+    puzzle = Puzzle(axis_size, anchor_crop)
+    for ind in range(axis_size ** 2 - 1):
+        candidates = puzzle.next_candidates
+        target, new, orient = choose_next(candidates, prob_tensor)
+        puzzle.add_piece(target, new, orient)
+    puzzle.get_puzzle()
+    return puzzle.get_puzzle('a')
+
+def sinkhorn(A, n_iter=4):
+    for i in range(n_iter):
+        A /= A.sum(axis=1, keepdims=True) + 1e-20
+        A /= A.sum(axis=2, keepdims=True) + 1e-20
+    return A
+
+def plot_crops(crops):
+    crop_num = len(crops)
+    axis_size = int(np.sqrt(crop_num))
+    fig = plt.figure(figsize=(axis_size, axis_size))
+    ax = [plt.subplot(axis_size, axis_size, i + 1) for i in range(crop_num)]
+    for ind, crop in enumerate(crops):
+        ax[ind].imshow(crop)
+        plt.imshow(crop)
+        ax[ind].set_aspect('equal')
+        ax[ind].set_xticklabels([])
+        ax[ind].set_yticklabels([])
+    fig.subplots_adjust(wspace=0, hspace=0)
+    plt.show()
+
+def plot_in_order(labels, crops):
+    crop_num = len(labels)
+    axis_size = int(np.sqrt(crop_num))
+    fig = plt.figure(figsize=(axis_size, axis_size))
+    ax = [plt.subplot(axis_size, axis_size, i + 1) for i in range(crop_num)]
+    for ind, label in enumerate(labels):
+        current_image = crops[label]
+        ax[ind].imshow(current_image)
+        plt.imshow(current_image)
+        ax[ind].set_aspect('equal')
+        ax[ind].set_xticklabels([])
+        ax[ind].set_yticklabels([])
+    fig.subplots_adjust(wspace=0, hspace=0)
+    plt.show()

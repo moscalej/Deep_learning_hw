@@ -9,8 +9,8 @@ summary :       This Scrip is use for Building
                 training.
 """
 import keras
-from models.Lenguage import load_imbd, data_generator
-from models.ReviewGenerator import ReviewGenerator
+from Deep_learning_hw.models.Lenguage import load_imbd, data_generator
+from Deep_learning_hw.models.ReviewGenerator import ReviewGenerator
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 
 # %%

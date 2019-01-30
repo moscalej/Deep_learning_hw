@@ -59,8 +59,9 @@ def pre_process_data(input_path: list, cuts: int, shape: int = 32, normalize: bo
     # return np.array(images) # todo back to array
     return images
 
-def reshape_all(images:list,sise:int)->list:
-    return list(map(lambda x: cv2.resize(x,(sise,sise)),images))
+
+def reshape_all(images: list, sise: int) -> list:
+    return list(map(lambda x: cv2.resize(x, (sise, sise)), images))
 
 
 # @njit()
@@ -87,9 +88,9 @@ def stich(img1, img2, orient):
     return stiched
 
 
-def similarity(edge_a, edge_b):
+def dissimilarity(edge_a, edge_b):
     # todo see if reshape needed
-    return float(-np.sum(np.sqrt((edge_a - edge_b) ** 2)))
+    return float(np.sum(np.sqrt((edge_a - edge_b) ** 2)))
 
 
 def choose_false_crops(image, target_crop, options, size):
@@ -108,14 +109,14 @@ def choose_false_crops(image, target_crop, options, size):
         crop_down = crop[-1, :]
         crop_left = crop[:, 1]
         crop_right = crop[:, -1]
-        diss_top.append((similarity(target_edge_top, crop_top), crop_ind))
-        diss_down.append((similarity(target_edge_down, crop_down), crop_ind))
-        diss_left.append((similarity(target_edge_left, crop_left), crop_ind))
-        diss_right.append((similarity(target_edge_right, crop_right), crop_ind))
-    diss_top.sort(key=lambda x: x[0],reverse=True)
-    diss_down.sort(key=lambda x: x[0],reverse=True)
-    diss_left.sort(key=lambda x: x[0],reverse=True)
-    diss_right.sort(key=lambda x: x[0],reverse=True)
+        diss_top.append((dissimilarity(target_edge_top, crop_top), crop_ind))
+        diss_down.append((dissimilarity(target_edge_down, crop_down), crop_ind))
+        diss_left.append((dissimilarity(target_edge_left, crop_left), crop_ind))
+        diss_right.append((dissimilarity(target_edge_right, crop_right), crop_ind))
+    diss_top.sort(key=lambda x: x[0], reverse=True)
+    diss_down.sort(key=lambda x: x[0], reverse=True)
+    diss_left.sort(key=lambda x: x[0], reverse=True)
+    diss_right.sort(key=lambda x: x[0], reverse=True)
     combined_list = [diss_top, diss_down, diss_left, diss_right]
     chosen_crops = []
     top_ind, down_ind, left_ind, right_ind = 0, 0, 0, 0
@@ -131,7 +132,7 @@ def choose_false_crops(image, target_crop, options, size):
 
 
 # @njit()
-def processed2train(images: list, axis_size) -> tuple:
+def processed2train(images: list, axis_size, mode='train') -> tuple:
     trainX = []
     trainY = []
     for im_ind, image in enumerate(images):
@@ -145,9 +146,16 @@ def processed2train(images: list, axis_size) -> tuple:
             neigh_inds = [neigh for (neigh, _) in true_crops_inds if neigh != -1]
             false_crops_inds = np.random.choice([i for i in range(len(image)) if i not in set(neigh_inds) | {crop_ind}],
                                                 size=num_neigh)
-            false_crops = choose_false_crops(image, crop[0],
-                                             [i for i in range(len(image)) if i not in set(neigh_inds) | {crop_ind}],
-                                             num_neigh)
+            if mode == 'train':
+                false_crops = choose_false_crops(image, crop[0],
+                                                 [i for i in range(len(image)) if
+                                                  i not in set(neigh_inds) | {crop_ind}],
+                                                 num_neigh)
+            elif mode == 'validation':
+                false_crops = choose_false_crops(image, crop[0],
+                                                 [i for i in range(len(image)) if
+                                                  i not in set(neigh_inds) | {crop_ind}],
+                                                 len(image) - num_neigh - 1)
             # if crop_ind in crop_with_OOD:
             #     false_crops[0] = images[next(OOD_inds)][int(np.random.choice(range(axis_size ** 2), size=1))]
 
@@ -160,6 +168,7 @@ def processed2train(images: list, axis_size) -> tuple:
             for (false_c, orient_) in false_crops:
                 trainX.append(stich(crop[0], false_c, orient_))
                 trainY.append(0)
+
     trainX = np.array(trainX)
     trainY = to_categorical(trainY, 2)
     trainX, _, trainY, _ = train_test_split(trainX, trainY, test_size=0)

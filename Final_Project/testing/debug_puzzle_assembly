@@ -1,0 +1,19 @@
+adding puzzle piece: 5 to 6 with orientation: left
+adding puzzle piece: 7 to 6 with orientation: right
+adding puzzle piece: 2 to 6 with orientation: up
+adding puzzle piece: 4 to 5 with orientation: left
+adding puzzle piece: 3 to 7 with orientation: up
+#
+_,_,2,3
+4,5,6,7
+#
+adding puzzle piece: 12 to 7 with orientation: down <- first mistake
+adding puzzle piece: 15 to 2 with orientation: left
+adding puzzle piece: 14 to 4 with orientation: up
+adding puzzle piece: 13 to 3 with orientation: up
+adding puzzle piece: 11 to 12 with orientation: left
+adding puzzle piece: 0 to 15 with orientation: up
+adding puzzle piece: 8 to 14 with orientation: up
+adding puzzle piece: 10 to 13 with orientation: left
+adding puzzle piece: 1 to 5 with orientation: down
+adding puzzle piece: 9 to 4 with orientation: down

@@ -88,7 +88,7 @@ def create_arch_discrimitor(ud_lr: str = "up", weight_decay: float = 5e-5, input
 
 
 def border_compare(weight_decay: float = 5e-5, input_size: int = 32, optimizer: str = 'adam') -> keras.Model:
-    real = kl.Input([input_size , 4])
+    real = kl.Input([input_size, 4])
     flat = kl.Flatten()(real)
     encoder = kl.Dense(160, kernel_regularizer=keras.regularizers.l2(weight_decay))(flat)
     encoder = kl.LeakyReLU()(encoder)
