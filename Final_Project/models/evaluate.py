@@ -1,12 +1,11 @@
 # %%
 import os
 import cv2
-from Deep_learning_hw.Final_Project.models.Algorithm_sketch import predict_2
+from Final_Project.models.Algorithm_sketch import predict_2
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import numpy as np
 
-# %%
 
 def predict(images, showimage=True):  # todo showimage=False
 
@@ -43,6 +42,7 @@ def evaluate(file_dir='example/'):
     for f in files:
         im = cv2.imread(file_dir + f)
         im = cv2.cvtColor(im, cv2.COLOR_RGB2GRAY)
+
         images.append(im)
 
     Y = predict(images)

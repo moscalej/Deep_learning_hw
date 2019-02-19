@@ -12,56 +12,58 @@ from sklearn.model_selection import train_test_split
 from Final_Project.models.Preprocesses import for_embeding, pre_process_data
 
 
-def create_model(weight_decay = 6e-3):
+def create_model(weight_decay=6e-3):
     "the idea is to encode pictures to global position "
-    in_photo = kl.Input((32,32,1))
-    encoder = kl.Conv2D(32,(3,3), padding='same',kernel_regularizer=keras.regularizers.l2(weight_decay))(in_photo)
+    in_photo = kl.Input((32, 32, 1))
+    encoder = kl.Conv2D(32, (3, 3), padding='same', kernel_regularizer=keras.regularizers.l2(weight_decay))(in_photo)
     encoder = kl.BatchNormalization()(encoder)
     encoder = kl.LeakyReLU()(encoder)
-    encoder = kl.Conv2D(32,(3,3), padding='same',kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
+    encoder = kl.Conv2D(32, (3, 3), padding='same', kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
     encoder = kl.BatchNormalization()(encoder)
     encoder = kl.LeakyReLU()(encoder)
-    encoder = kl.MaxPool2D()(encoder) # 16
+    encoder = kl.MaxPool2D()(encoder)  # 16
 
-    encoder = kl.Conv2D(64,(3,3), padding='same',kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
+    encoder = kl.Conv2D(64, (3, 3), padding='same', kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
     encoder = kl.BatchNormalization()(encoder)
     encoder = kl.LeakyReLU()(encoder)
-    encoder = kl.MaxPool2D()(encoder) # 8
-    encoder = kl.Conv2D(96,(3,3), padding='same',kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
+    encoder = kl.MaxPool2D()(encoder)  # 8
+    encoder = kl.Conv2D(96, (3, 3), padding='same', kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
     encoder = kl.BatchNormalization()(encoder)
     encoder = kl.LeakyReLU()(encoder)
-    encoder = kl.MaxPool2D()(encoder) # 4
-    encoder = kl.Conv2D(128,(3,3), padding='same',kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
+    encoder = kl.MaxPool2D()(encoder)  # 4
+    encoder = kl.Conv2D(128, (3, 3), padding='same', kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
     encoder = kl.BatchNormalization()(encoder)
     encoder = kl.LeakyReLU()(encoder)
-    encoder = kl.Conv2D(128,(3,3), padding='same',kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
+    encoder = kl.Conv2D(128, (3, 3), padding='same', kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
     encoder = kl.BatchNormalization()(encoder)
     encoder = kl.LeakyReLU()(encoder)
-    encoder = kl.MaxPool2D()(encoder) #2
+    encoder = kl.MaxPool2D()(encoder)  # 2
     encoder = kl.Flatten()(encoder)
-    encoder = kl.Dense(128,kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
+    encoder = kl.Dense(128, kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
     encoder = kl.BatchNormalization()(encoder)
     encoder = kl.LeakyReLU()(encoder)
     encoder = kl.Dropout(0.4)(encoder)
-    encoder = kl.Dense(64,kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
+    encoder = kl.Dense(64, kernel_regularizer=keras.regularizers.l2(weight_decay))(encoder)
     encoder = kl.BatchNormalization()(encoder)
     encoder = kl.LeakyReLU()(encoder)
     encoder = kl.Dropout(0.4)(encoder)
 
-    encoder = kl.Dense(3,activation='tanh')(encoder)
+    encoder = kl.Dense(3, activation='tanh')(encoder)
     model = km.Model(inputs=in_photo, outputs=encoder)
-    model.compile(optimizer='adam',loss='mse')
+    model.compile(optimizer='adam', loss='mse')
     return model
-#%%
-paths = [r'C:/Users/amoscoso/Documents/Technion/deeplearning/Deep_learning_hw/FinalProject/data/images',
-         r'C:/Users/amoscoso/Documents/Technion/deeplearning/Deep_learning_hw/FinalProject/data/documents']
+
+
+# %%
+paths = [r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\data\images',
+         r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\data\documents']
 
 t = pre_process_data(paths,
                      cuts=5,
                      shape=32)
-x_train , y_train = for_embeding(t)
+x_train, y_train = for_embeding(t)
 print(x_train.shape)
-#%%
+# %%
 filepath = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\FinalProject\train\check_pont\embding_v1\embding_v4.{epoch:02d}-{val_loss:.2f}.hdf5'
 tf_fp = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\FinalProject\train\tf\embding_v4'
 tbCallBack = TensorBoard(log_dir=tf_fp,
@@ -84,8 +86,9 @@ reduce_lr = ReduceLROnPlateau(monitor='loss',
                               min_lr=0.000001,
                               embeddings_layer_names=None,
                               embeddings_metadata=None)
-ear_s =EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=0, mode='auto', baseline=None, restore_best_weights=False)
-#%%
+ear_s = EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=0, mode='auto', baseline=None,
+                      restore_best_weights=False)
+# %%
 img = ImageDataGenerator(featurewise_center=False,
                          samplewise_center=False,
                          featurewise_std_normalization=False,
@@ -103,26 +106,25 @@ img = ImageDataGenerator(featurewise_center=False,
                          vertical_flip=False,
                          rescale=None,
 
-
                          )
 
 img.fit(x_train)
-#%%
+# %%
 model = create_model()
 model.summary()
-#%%
-x_train_,x_test, y_train_,y_test = train_test_split(x_train,y_train,test_size=0.1)
+# %%
+x_train_, x_test, y_train_, y_test = train_test_split(x_train, y_train, test_size=0.1)
 history_fully = model.fit_generator(img.flow(x_train_, y_train_, batch_size=1024), steps_per_epoch=48,
                                     shuffle=True,
                                     epochs=500,
                                     initial_epoch=120,
-                                    validation_data=[x_test,y_test],
-                                     callbacks=[tbCallBack, reduce_lr,modelcheck])
-#%%
+                                    validation_data=[x_test, y_test],
+                                    callbacks=[tbCallBack, reduce_lr, modelcheck])
+# %%
 
 results = model.fit(x_train,
                     y_train
-                    ,1024,
+                    , 1024,
                     1000,
                     validation_split=0.2,
-                    callbacks=[tbCallBack,modelcheck,reduce_lr,ear_s])
+                    callbacks=[tbCallBack, modelcheck, reduce_lr, ear_s])

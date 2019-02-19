@@ -1,16 +1,16 @@
 # %%
 from numba import jit, njit
 import numpy as np
-from Deep_learning_hw.Final_Project.models import Preprocesses
+from Final_Project.models import Preprocesses
 import numpy as np
 from keras.models import Sequential, Model
 from collections import defaultdict
 import yaml
-from Deep_learning_hw.Final_Project.models.Preprocesses import reshape_all
+from Final_Project.models.Preprocesses import reshape_all
 from keras.models import load_model
 import cv2
 import matplotlib.pyplot as plt
-# %%
+
 clock2orient = {12: 0, 6: 1, 9: 2, 3: 3}
 orient2clock = {value: key for key, value in clock2orient.items()}
 clock2str = {12: 'above', 6: 'below', 9: 'left', 3: 'right'}
@@ -107,26 +107,21 @@ def get_prob_dict(crop_list: list, matcher: Model) -> np.ndarray:
     directions_def = [0, 1, 2, 3]  # [up, down, left, right]
     crop_num = len(crop_list)
     keys = []
-    tasks = []
+    tasks_0 = []
+    tasks_1 = []
 
     for _2attach in range(crop_num):
         for attach2 in range(crop_num):
-            for orient in directions_def:
-                keys.append(tuple([_2attach, attach2, orient]))
-                if _2attach == 12 and attach2 == 7 and orient2str[orient] == 'below':
-                    stiched_img = Preprocesses.stich(crop_list[attach2], crop_list[_2attach], orient)
-                    fig = plt.figure()
-                    fig.clf()
-                    fig.suptitle(f"Task: {_2attach} {orient2str[orient]} to {attach2}", fontsize=16)
-                    plt.imshow(stiched_img)
-                    plt.show()
-                tasks.append(Preprocesses.stich(crop_list[attach2], crop_list[_2attach], orient))
+            keys.append((_2attach, attach2))
+            tasks_0.append(crop_list[_2attach])
+            tasks_1.append(crop_list[attach2])
 
-    tasks = np.array(tasks)
-    results = np.zeros([crop_num, crop_num, 4], dtype=np.float64)
-    print(f'Shape of task {tasks.shape}')
-    predicted = matcher.predict(tasks)
-    return fast_fill_mat(predicted[:, 1], keys, results)
+    tasks_0 = np.expand_dims(np.array(tasks_0), 3)
+    tasks_1 = np.expand_dims(np.array(tasks_1), 3)
+    results = np.zeros([crop_num, crop_num, 5], dtype=np.float64)
+    print(f'Shape of task {tasks_0.shape}, {tasks_1.shape}')
+    predicted = matcher.predict([tasks_0, tasks_1])
+    return fast_fill_mat(predicted, keys, results)
 
 
 # @njit()
@@ -144,7 +139,7 @@ def fast_fill_mat(predic: np.ndarray, keys: list, results: np.ndarray) -> np.nda
     """
     for pred, key in zip(predic, keys):
         results[key] = pred
-    results /= results.sum(axis=1, keepdims=True) + 1e-20
+    # results /= results.sum(axis=1, keepdims=True) + 1e-20
     return results
 
 
@@ -153,7 +148,7 @@ def choose_next(candidates, match_prob_dict):
     best_candidate_prob = 0 - 1e-9
     if candidates == []:  # choose greedy  # todo smart choice
         for candidate_ind in range(match_prob_dict.shape[0]):
-            attach2 = match_prob_dict[:,candidate_ind,:]  # candidate is a matrix num_crops X directions
+            attach2 = match_prob_dict[:, candidate_ind, :]  # candidate is a matrix num_crops X directions
             max_matches_inds = np.argmax(attach2, axis=0)
             max_matches = attach2[max_matches_inds]  # prob_list
             mean_match_prob = np.mean(max_matches)
@@ -188,8 +183,8 @@ def assemble(crop_list: list, matcher: Model) -> np.array:
     axis_size = int(np.sqrt(crop_num))
 
     prob_tensor = get_prob_dict(crop_list, matcher)  # sorted dictionary
-
-    anchor_crop, _, _ = choose_next([], prob_tensor)
+    prob_tensor_cut = prob_tensor[:, :, 0:4]
+    anchor_crop, _, _ = choose_next([], prob_tensor_cut)
     puzzle = Puzzle(axis_size, anchor_crop)
 
     for ind in range(axis_size ** 2 - 1):
@@ -200,12 +195,12 @@ def assemble(crop_list: list, matcher: Model) -> np.array:
     return puzzle.get_puzzle()
 
 
-def predict_2(images, showimage=True):
+def predict_2(images: list, showimage: bool = True):
     with open(
-            r'C:\Users\afinkels\Desktop\private\Technion\Master studies\Deep Learning\HW\hw_repo\Deep_learning_hw\Final_Project\parameters.YAML')as fd:  # todo
+            r'Final_Project\parameters.YAML')as fd:  # todo
         param = yaml.load(fd)
     model = load_model(param['Discri']['path'])
-    crops = reshape_all(images, 64)
+    crops = reshape_all(images, 64, param['mean'], param['std'])
     if showimage:
         plot_crops(crops)
     labels = assemble(crop_list=crops, matcher=model)
@@ -242,11 +237,13 @@ def test_anssemble():
     puzzle.get_puzzle()
     return puzzle.get_puzzle('a')
 
+
 def sinkhorn(A, n_iter=4):
     for i in range(n_iter):
         A /= A.sum(axis=1, keepdims=True) + 1e-20
         A /= A.sum(axis=2, keepdims=True) + 1e-20
     return A
+
 
 def plot_crops(crops):
     crop_num = len(crops)
@@ -255,12 +252,15 @@ def plot_crops(crops):
     ax = [plt.subplot(axis_size, axis_size, i + 1) for i in range(crop_num)]
     for ind, crop in enumerate(crops):
         ax[ind].imshow(crop)
-        plt.imshow(crop)
+        ax[ind].set_title(ind)
+        # plt.imshow(crop)
         ax[ind].set_aspect('equal')
         ax[ind].set_xticklabels([])
         ax[ind].set_yticklabels([])
     fig.subplots_adjust(wspace=0, hspace=0)
+    fig.suptitle("Original crops")
     plt.show()
+
 
 def plot_in_order(labels, crops):
     crop_num = len(labels)

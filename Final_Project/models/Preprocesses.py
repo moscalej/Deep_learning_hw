@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import os
-
+import matplotlib.pyplot as plt
 from keras.utils import to_categorical
 from numba import njit
 from sklearn.model_selection import train_test_split
@@ -41,6 +41,7 @@ def pre_process_data(input_path: list, cuts: int, shape: int = 32, normalize: bo
         x_mean = np.mean(x, axis=(0, 1, 2))
         x_std = np.std(x, axis=(0, 1, 2))
         x = (x - x_mean) / (x_std + 1e-9)
+        print(f' mean {x_mean} , std {x_std}')
 
     for im in x:
         height = im.shape[0]
@@ -60,8 +61,8 @@ def pre_process_data(input_path: list, cuts: int, shape: int = 32, normalize: bo
     return images
 
 
-def reshape_all(images: list, sise: int) -> list:
-    return list(map(lambda x: cv2.resize(x, (sise, sise)), images))
+def reshape_all(images: list, sise: int, mean: float, std: float) -> object:
+    return list(map(lambda x: (cv2.resize(x, (sise, sise)) - mean) / std, images))
 
 
 # @njit()
@@ -136,16 +137,16 @@ def processed2train(images: list, axis_size, mode='train') -> tuple:
     trainX = []
     trainY = []
     for im_ind, image in enumerate(images):
-        OOD_inds = (x for x in np.random.choice([i for i in range(len(images)) if i != im_ind], size=axis_size))
-        crop_with_OOD = np.random.choice(range(len(image)), size=axis_size)
+        # OOD_inds = (x for x in np.random.choice([i for i in range(len(images)) if i != im_ind], size=axis_size))
+        # crop_with_OOD = np.random.choice(range(len(image)), size=axis_size)
         for crop_ind, crop in enumerate(image):
             neighs = crop[3]  # neighbours(up, down, left, right)
             num_neigh = np.count_nonzero(np.array(neighs) + 1)
             true_crops = [(image[neigh_ind][0], orient) for orient, neigh_ind in enumerate(neighs) if neigh_ind != -1]
             true_crops_inds = [(neigh_ind, orient) for orient, neigh_ind in enumerate(neighs) if neigh_ind != -1]
             neigh_inds = [neigh for (neigh, _) in true_crops_inds if neigh != -1]
-            false_crops_inds = np.random.choice([i for i in range(len(image)) if i not in set(neigh_inds) | {crop_ind}],
-                                                size=num_neigh)
+            # false_crops_inds = np.random.choice([i for i in range(len(image)) if i not in set(neigh_inds) | {crop_ind}],
+            #                                     size=num_neigh)
             if mode == 'train':
                 false_crops = choose_false_crops(image, crop[0],
                                                  [i for i in range(len(image)) if
@@ -180,37 +181,31 @@ def processed2train_2_chanel(images: list, axis_size) -> tuple:  # todo back to 
     trainX_0 = []
     trainX_1 = []
     trainY = []
+    number_of_crops = len(images[0])
+    all_crops = set(range(number_of_crops))
     for im_ind, image in enumerate(images):  # todo back to array
-        OOD_inds = (choi for choi in np.random.choice([i for i in range(len(images)) if i != im_ind], size=axis_size))
-        crop_with_OOD = np.random.choice(range(len(image)), size=axis_size)
-        for crop_ind, crop in enumerate(image):
-            neighs = crop[3]  # neighbours(up, down, left, right)
-            num_neigh = np.count_nonzero(np.array(neighs) + 1)
-            true_crops = [(neigh_ind, orient) for orient, neigh_ind in enumerate(neighs) if neigh_ind != -1]
-            neigh_inds = [neigh for (neigh, _) in true_crops if neigh != -1]
-            false_crops_inds = np.random.choice([i for i in range(len(image)) if i not in set(neigh_inds) | {crop_ind}],
-                                                size=num_neigh)
-            false_crops = [image[ind] for ind in false_crops_inds]
-            if crop_ind in crop_with_OOD:
-                false_crops[0] = images[next(OOD_inds)][int(np.random.choice(range(axis_size ** 2), size=1))]
+        for crop, crop_index, _, neighs in image:
 
-            # add true samples
-            for (true_c, orient) in true_crops:
-                trainX_0.append(crop[0])
-                trainX_1.append(image[true_c][0])
+            true_crops = [(image[neigh_ind][0], orient) for orient, neigh_ind in enumerate(neighs) if neigh_ind != -1]
+            true_crops_inds = [(neigh_ind, orient) for orient, neigh_ind in enumerate(neighs) if neigh_ind != -1]
+            neigh_inds = [neigh for (neigh, _) in true_crops_inds if neigh != -1]
+            list_1 = list(all_crops - (set(neigh_inds) | {crop_index}))
+
+            for true_c, orient in true_crops:
+                trainX_0.append(crop)
+                trainX_1.append(true_c)
                 trainY.append(orient)
 
             # add false samples
-            for false_c in false_crops:
-                trainX_0.append(crop[0])
-                trainX_1.append(false_c[0])
-                trainY.append(4)
-                break
+
+            trainX_0.append(crop)
+            trainX_1.append(image[np.random.choice(list_1)][0])
+            trainY.append(4)
 
     trainX_0 = np.expand_dims(np.array(trainX_0), axis=3)
     trainX_1 = np.expand_dims(np.array(trainX_1), axis=3)
     trainY = to_categorical(trainY, 5)
-    trainX_0, _, trainX_, _, trainY, _ = train_test_split(trainX_0, trainX_1, trainY, test_size=0)
+    trainX_0, _, trainX_, _, trainY, _ = train_test_split(trainX_0, trainX_1, trainY, test_size=0, shuffle=False)
     return trainX_0, trainX_1, trainY
 
 
@@ -231,28 +226,28 @@ def create_train_set(input_paths, shape=32):
 @njit()
 def neighbours(number: int, number_sectors: int) -> [int, int, int, int]:
     """
-    This function will give each picture there neigbors
+    This function will give each picture there neighbors
     :param number: where in the grid
     :type number: int
     :param number_sectors: number of cuts
     :type number_sectors: int
-    :return: Who is the nigbors -1 means no one (up, down, left, right)
+    :return: Who is the neighbors -1 means no one (up, down, left, right)
     :rtype: list
     """
     col = number % number_sectors
     row = number // number_sectors
 
-    nieg = [number - number_sectors, number + number_sectors, number - 1, number + 1]
+    neighbors = [number - number_sectors, number + number_sectors, number - 1, number + 1]
 
     if row == 0:
-        nieg[0] = -1
+        neighbors[0] = -1
     if row == number_sectors - 1:
-        nieg[1] = -1
+        neighbors[1] = -1
     if col == 0:
-        nieg[2] = -1
+        neighbors[2] = -1
     if col == number_sectors - 1:
-        nieg[3] = -1
-    return nieg
+        neighbors[3] = -1
+    return neighbors
 
 
 @njit()
@@ -316,6 +311,15 @@ def for_embeding(data, normalize=True):
     return x_center, y
 
     # isinstance(data,np.ndarray)
+
+
+def plot_preproccess(true_im: list, bighbors: list, orient: list, index: int):
+    fig, ax = plt.subplots(1, 2)
+    ax[0].imshow(true_im[index].squeeze())
+    ax[1].imshow(bighbors[index].squeeze())
+
+    plt.title(f"the oritation is {['up', 'down', 'left', 'right', 'Not'][int(np.argmax(orient[index]))]}")
+    plt.show()
 
 
 def preprocess_inference(images, shape):
