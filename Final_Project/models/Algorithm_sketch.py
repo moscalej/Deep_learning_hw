@@ -180,12 +180,16 @@ def matcher_wrap(matcher, crop1, crop2, orient):
 # High Level
 
 
+def chooss_ood(prob_tensor, crop_num):
+    pass
+
+
 def assemble(crop_list: list, matcher: Model) -> np.array:
     crop_num = len(crop_list)
     axis_size = int(np.sqrt(crop_num))
 
     prob_tensor = get_prob_dict(crop_list, matcher)  # sorted dictionary
-    prob_tensor_cut = prob_tensor[:, :, 0:4]
+    prob_tensor_cut = chooss_ood(prob_tensor, crop_num)
     anchor_crop, _, _ = choose_next([], prob_tensor_cut)
     puzzle = Puzzle(axis_size, anchor_crop)
 
