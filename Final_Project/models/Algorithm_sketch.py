@@ -110,11 +110,11 @@ def get_prob_dict(crop_list: list, matcher: Model) -> np.ndarray:
     tasks_0 = []
     tasks_1 = []
 
-    for _2attach in range(crop_num):
-        for attach2 in range(crop_num):
-            keys.append((_2attach, attach2))
-            tasks_0.append(crop_list[_2attach])
-            tasks_1.append(crop_list[attach2])
+    for candidate in range(crop_num):
+        for center in range(crop_num):
+            keys.append((candidate, center))  # (center of the universe, candidate)
+            tasks_0.append(crop_list[center])
+            tasks_1.append(crop_list[candidate])
 
     tasks_0 = np.expand_dims(np.array(tasks_0), 3)
     tasks_1 = np.expand_dims(np.array(tasks_1), 3)
@@ -178,6 +178,8 @@ def matcher_wrap(matcher, crop1, crop2, orient):
 
 
 # High Level
+
+
 def assemble(crop_list: list, matcher: Model) -> np.array:
     crop_num = len(crop_list)
     axis_size = int(np.sqrt(crop_num))
@@ -197,10 +199,10 @@ def assemble(crop_list: list, matcher: Model) -> np.array:
 
 def predict_2(images: list, showimage: bool = True):
     with open(
-            r'Final_Project\parameters.YAML')as fd:  # todo
+            r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\parameters.YAML')as fd:  # todo
         param = yaml.load(fd)
     model = load_model(param['Discri']['path'])
-    crops = reshape_all(images, 64, param['mean'], param['std'])
+    crops = reshape_all(images, 64, param['Discri']['x_mean'], param['Discri']['x_std'])
     if showimage:
         plot_crops(crops)
     labels = assemble(crop_list=crops, matcher=model)
