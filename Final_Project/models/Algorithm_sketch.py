@@ -1,12 +1,12 @@
 # %%
 from numba import jit, njit
 import numpy as np
-from Final_Project.models import Preprocesses
+from Deep_learning_hw.Final_Project.models import Preprocesses
 import numpy as np
 from keras.models import Sequential, Model
 from collections import defaultdict
 import yaml
-from Final_Project.models.Preprocesses import reshape_all
+from Deep_learning_hw.Final_Project.models.Preprocesses import reshape_all
 from keras.models import load_model
 import cv2
 import matplotlib.pyplot as plt
@@ -55,8 +55,17 @@ class Puzzle:
             self.relative_coo[_2attach] = (targetX + dX, targetY + dY)
             self.relative2ind[(targetX + dX, targetY + dY)] = _2attach
             curr_dim = self.relative_dims[direct]
-            if max(abs(dX * targetX), abs(dY * targetY)) == curr_dim:  # check if relative dimension expanded
-                self.relative_dims[direct] = self.relative_dims[direct] + 1
+            changed_axis = [abs(dX), abs(dY)].index(1)
+            temp = self.relative_coo[_2attach][changed_axis]
+            expand_dim = False
+            if dX + dY > 0:
+                if temp > curr_dim and temp > 0:
+                    expand_dim = True
+            elif dX + dY < 0:
+                if temp < curr_dim and temp < 0:
+                    expand_dim = True
+            if expand_dim:  # check if relative dimension expanded
+                self.relative_dims[direct] = self.relative_dims[direct] + dY + dX
             (absX, absY) = self._get_abs_coo(self.relative_coo[_2attach][0], self.relative_coo[_2attach][1])
             self.cyclic_puzzle[absX, absY] = _2attach  # put the piece in the puzzle
             neigh_tups = self._get_neigh(absX, absY)
@@ -70,9 +79,9 @@ class Puzzle:
     def get_puzzle(self, mode='label'):
         sorted = []
         label = []
-        rel_row = -self.relative_dims[9]
+        rel_row = self.relative_dims[9]
         for row in range(self.axis_size):
-            rel_col = -self.relative_dims[12]
+            rel_col = self.relative_dims[12]
             for col in range(self.axis_size):
                 sorted.append(int(self.cyclic_puzzle[self._get_abs_coo(rel_row, rel_col)]))
                 label.append(int(self.relative2ind[(rel_row, rel_col)]))
@@ -181,8 +190,7 @@ def matcher_wrap(matcher, crop1, crop2, orient):
 
 
 def chooss_ood(prob_tensor, crop_num):
-    pass
-
+    return prob_tensor
 
 def assemble(crop_list: list, matcher: Model) -> np.array:
     crop_num = len(crop_list)
@@ -203,7 +211,7 @@ def assemble(crop_list: list, matcher: Model) -> np.array:
 
 def predict_2(images: list, showimage: bool = True):
     with open(
-            r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\parameters.YAML')as fd:  # todo
+            r'C:\Users\afinkels\Desktop\private\Technion\Master studies\Deep Learning\HW\hw_repo\Deep_learning_hw\Final_Project\parameters.YAML')as fd:  # todo
         param = yaml.load(fd)
     model = load_model(param['Discri']['path'])
     crops = reshape_all(images, 64, param['Discri']['x_mean'], param['Discri']['x_std'])
