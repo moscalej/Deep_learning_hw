@@ -71,17 +71,20 @@ class Puzzle:
             neigh_tups = self._get_neigh(absX, absY)
             new_directs = set([3, 6, 9, 12])
             for (crop_ind, direct_) in neigh_tups:  # directions relative to new
+                new_directs.add(direct_)  # avoid key errors
                 new_directs.remove(direct_)
                 rem = (6 + direct_) % 12 if direct_ != 6 else 12
+                self.next_candidates[crop_ind].add(rem)
                 self.next_candidates[crop_ind].remove(rem)  # remove opposite direction
             self.next_candidates[_2attach] = new_directs
+            self._remove_out_of_frame()
 
     def get_puzzle(self, mode='label'):
         sorted = []
         label = []
-        rel_row = self.relative_dims[9]
+        rel_row = self.relative_dims[12]
         for row in range(self.axis_size):
-            rel_col = self.relative_dims[12]
+            rel_col = self.relative_dims[9]
             for col in range(self.axis_size):
                 sorted.append(int(self.cyclic_puzzle[self._get_abs_coo(rel_row, rel_col)]))
                 label.append(int(self.relative2ind[(rel_row, rel_col)]))
@@ -91,6 +94,37 @@ class Puzzle:
             return label
         else:
             return sorted
+
+    def _remove_out_of_frame(self):
+        # horizontal frame
+        right_edge = []
+        left_edge = []
+        if self.relative_dims[3] - self.relative_dims[9] == self.axis_size - 1:
+            right_edge = [piece for (x,y), piece in self.relative2ind.items() if self.relative_dims[3] == x]
+            left_edge = [piece for (x,y), piece in self.relative2ind.items() if self.relative_dims[9] == x]
+        if len(right_edge):
+            for piece in right_edge:
+                self.next_candidates[piece].add(3)
+                self.next_candidates[piece].remove(3)
+        if len(left_edge):
+            for piece in left_edge:
+                self.next_candidates[piece].add(9)
+                self.next_candidates[piece].remove(9)
+        # vertical frame
+        bottom_edge = []
+        upper_edge = []
+        if self.relative_dims[6] - self.relative_dims[12] == self.axis_size - 1:
+            bottom_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[6] == x]
+            upper_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[12] == x]
+        if len(bottom_edge):
+            for piece in bottom_edge:
+                self.next_candidates[piece].add(6)
+                self.next_candidates[piece].remove(6)
+        if len(upper_edge):
+            for piece in upper_edge:
+                self.next_candidates[piece].add(12)
+                self.next_candidates[piece].remove(12)
+
 
     def _get_neigh(self, absX, absY):
         neighbours = self.neighbours_def
@@ -195,7 +229,6 @@ def chooss_ood(prob_tensor, crop_num):
 def assemble(crop_list: list, matcher: Model) -> np.array:
     crop_num = len(crop_list)
     axis_size = int(np.sqrt(crop_num))
-
     prob_tensor = get_prob_dict(crop_list, matcher)  # sorted dictionary
     prob_tensor_cut = chooss_ood(prob_tensor, crop_num)
     anchor_crop, _, _ = choose_next([], prob_tensor_cut)
