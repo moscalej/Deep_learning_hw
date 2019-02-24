@@ -1,12 +1,14 @@
 # %%
+from math import sqrt
+
 from numba import jit, njit
 import numpy as np
-from Deep_learning_hw.Final_Project.models import Preprocesses
+from Final_Project.models import Preprocesses
 import numpy as np
 from keras.models import Sequential, Model
 from collections import defaultdict
 import yaml
-from Deep_learning_hw.Final_Project.models.Preprocesses import reshape_all
+from Final_Project.models.Preprocesses import reshape_all
 from keras.models import load_model
 import cv2
 import matplotlib.pyplot as plt
@@ -104,8 +106,8 @@ class Puzzle:
         right_edge = []
         left_edge = []
         if self.relative_dims[3] - self.relative_dims[9] == self.axis_size - 1:
-            right_edge = [piece for (x,y), piece in self.relative2ind.items() if self.relative_dims[3] == x]
-            left_edge = [piece for (x,y), piece in self.relative2ind.items() if self.relative_dims[9] == x]
+            right_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[3] == x]
+            left_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[9] == x]
         if len(right_edge):
             for piece in right_edge:
                 self.next_candidates[piece].add(3)
@@ -128,7 +130,6 @@ class Puzzle:
             for piece in upper_edge:
                 self.next_candidates[piece].add(12)
                 self.next_candidates[piece].remove(12)
-
 
     def _get_neigh(self, absX, absY):
         neighbours = self.neighbours_def
@@ -228,7 +229,8 @@ def matcher_wrap(matcher, crop1, crop2, orient):
 
 
 def chooss_ood(prob_tensor, crop_num):
-    return prob_tensor
+    return prob_tensor[:, :, :4]
+
 
 def assemble(crop_list: list, matcher: Model) -> np.array:
     crop_num = len(crop_list)
@@ -248,7 +250,7 @@ def assemble(crop_list: list, matcher: Model) -> np.array:
 
 def predict_2(images: list, showimage: bool = True):
     with open(
-            r'C:\Users\afinkels\Desktop\private\Technion\Master studies\Deep Learning\HW\hw_repo\Deep_learning_hw\Final_Project\parameters.YAML')as fd:  # todo
+            r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\parameters.YAML')as fd:  # todo
         param = yaml.load(fd)
     model = load_model(param['Discri']['path'])
     crops = reshape_all(images, 64, param['Discri']['x_mean'], param['Discri']['x_std'])
@@ -258,6 +260,22 @@ def predict_2(images: list, showimage: bool = True):
     if showimage:
         plot_in_order(labels, images)
     return labels
+
+def predict_3(images: list):
+    with open(
+            r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\parameters.YAML')as fd:  # todo
+        param = yaml.load(fd)
+    model = load_model(param['Discri']['path'])
+    accuary = []
+    for img in images:
+        crops = reshape_all(img, 64, param['Discri']['x_mean'], param['Discri']['x_std'])
+        num_crops = len(crops)
+        cuts = int(sqrt(num_crops))
+        awnser = [x if x< cuts**2 else -1 for x in range(num_crops) ]
+        labels = assemble(crop_list=crops, matcher=model)
+        accuary.append(np.mean(labels == awnser))
+
+    return np.mean(accuary)
 
 
 # test for assembler
@@ -300,7 +318,7 @@ def plot_crops(crops):
     crop_num = len(crops)
     axis_size = int(np.sqrt(crop_num))
     fig = plt.figure(figsize=(axis_size, axis_size))
-    ax = [plt.subplot(axis_size, axis_size, i + 1) for i in range(crop_num)]
+    ax = [plt.subplot(axis_size+1, axis_size, i + 1) for i in range(crop_num)]
     for ind, crop in enumerate(crops):
         ax[ind].imshow(crop)
         ax[ind].set_title(ind)

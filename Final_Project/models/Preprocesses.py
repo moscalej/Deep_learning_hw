@@ -6,6 +6,7 @@ from keras.utils import to_categorical
 from numba import njit
 from sklearn.model_selection import train_test_split
 from scipy import signal
+from random import randint
 
 
 #  TODO: pre-process for inference (unknown cuts, OOD samples, already shredded)
@@ -61,8 +62,8 @@ def pre_process_data(input_path: list, cuts: int, shape: int = 32, normalize: bo
     return images
 
 
-def reshape_all(images: list, sise: int, mean: float, std: float) -> object:
-    return list(map(lambda x: (cv2.resize(x, (sise, sise)) - mean) / std, images))
+def reshape_all(images: list, sise: int, mean: float, std: float) -> list:
+    return list(map(lambda x: (cv2.resize(x, (sise, sise)) - 161.24) / 88.915, images))
 
 
 # @njit()
@@ -182,6 +183,7 @@ def processed2train_2_chanel(images: list, axis_size) -> tuple:  # todo back to 
     trainX_1 = []
     trainY = []
     number_of_crops = len(images[0])
+    number_images=len(images)
     all_crops = set(range(number_of_crops))
     for im_ind, image in enumerate(images):  # todo back to array
         for crop, crop_index, _, neighs in image:
@@ -201,6 +203,11 @@ def processed2train_2_chanel(images: list, axis_size) -> tuple:  # todo back to 
             trainX_0.append(crop)
             trainX_1.append(image[np.random.choice(list_1)][0])
             trainY.append(4)
+            for i in range(3):
+                trainX_0.append(crop)
+                trainX_1.append(images[randint(0,number_images-1)][randint(0,number_of_crops-1)][0])
+                trainY.append(4)
+
 
     trainX_0 = np.expand_dims(np.array(trainX_0), axis=3)
     trainX_1 = np.expand_dims(np.array(trainX_1), axis=3)
