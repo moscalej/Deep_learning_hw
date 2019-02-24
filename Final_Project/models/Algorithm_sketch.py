@@ -18,7 +18,7 @@ orient2str = {0: 'above', 1: 'below', 2: 'left', 3: 'right'}
 
 
 class Puzzle:
-    def __init__(self, axis_size: int, first_crop: int):
+    def __init__(self, axis_size: int, first_crop: int, num_pieces: int):
         print(f"Puzzle started with {first_crop}")
         self.cyclic_puzzle = np.ones([axis_size, axis_size]) * -1
         self.cyclic_puzzle[0, 0] = first_crop
@@ -31,6 +31,7 @@ class Puzzle:
         self.relative2ind[(0, 0)] = first_crop
         self.neighbours_def = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         self.directions_def = [3, 6, 9, 12]
+        self.num_pieces = num_pieces
 
     def add_piece(self, attach2, _2attach: int, clock: int) -> None:
         """
@@ -81,13 +82,16 @@ class Puzzle:
 
     def get_puzzle(self, mode='label'):
         sorted = []
-        label = []
+        label = [-1] * self.num_pieces
         rel_row = self.relative_dims[12]
+        location_count = 0
         for row in range(self.axis_size):
             rel_col = self.relative_dims[9]
             for col in range(self.axis_size):
                 sorted.append(int(self.cyclic_puzzle[self._get_abs_coo(rel_row, rel_col)]))
-                label.append(int(self.relative2ind[(rel_row, rel_col)]))
+                # label.append(int())
+                label[self.relative2ind[(rel_row, rel_col)]] = location_count
+                location_count += 1
                 rel_col += 1
             rel_row += 1
         if mode == 'label':
@@ -232,7 +236,7 @@ def assemble(crop_list: list, matcher: Model) -> np.array:
     prob_tensor = get_prob_dict(crop_list, matcher)  # sorted dictionary
     prob_tensor_cut = chooss_ood(prob_tensor, crop_num)
     anchor_crop, _, _ = choose_next([], prob_tensor_cut)
-    puzzle = Puzzle(axis_size, anchor_crop)
+    puzzle = Puzzle(axis_size, anchor_crop, crop_num)
 
     for ind in range(axis_size ** 2 - 1):
         candidates = puzzle.next_candidates
