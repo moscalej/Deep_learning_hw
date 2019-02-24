@@ -116,16 +116,19 @@ class Puzzle:
             for piece in left_edge:
                 self.next_candidates[piece].add(9)
                 self.next_candidates[piece].remove(9)
+
         # vertical frame
         bottom_edge = []
         upper_edge = []
+
         if self.relative_dims[6] - self.relative_dims[12] == self.axis_size - 1:
-            bottom_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[6] == x]
-            upper_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[12] == x]
+            bottom_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[6] == y]
+            upper_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[12] == y]
         if len(bottom_edge):
             for piece in bottom_edge:
                 self.next_candidates[piece].add(6)
                 self.next_candidates[piece].remove(6)
+
         if len(upper_edge):
             for piece in upper_edge:
                 self.next_candidates[piece].add(12)
