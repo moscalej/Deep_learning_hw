@@ -15,11 +15,11 @@ def create_test(images: list, cuts: int):
     samples = []
     for index, picture in enumerate(images):
         crops = [crop[0] for crop in picture]
-        for i in range(cuts - 1):
-            ood = randint(0, number_pic - 1)
-            if ood != index:
-                ood_pic = images[ood][randint(0, cuts ** 2 - 1)][0]
-                crops.append(ood_pic)
+        # for i in range(cuts - 1):
+        #     ood = randint(0, number_pic - 1)
+        #     if ood != index:
+        #         ood_pic = images[ood][randint(0, cuts ** 2 - 1)][0]
+        #         crops.append(ood_pic)
         samples.append(crops)
     return samples
 

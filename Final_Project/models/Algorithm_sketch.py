@@ -105,9 +105,10 @@ class Puzzle:
         # horizontal frame
         right_edge = []
         left_edge = []
-        if self.relative_dims[3] - self.relative_dims[9] == self.axis_size - 1:
-            right_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[3] == x]
-            left_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[9] == x]
+        print(f"horizontal axis size: {self.relative_dims[3] - self.relative_dims[9] + 1}")
+        if self.relative_dims[3] - self.relative_dims[9] + 1 == self.axis_size:
+            right_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[3] == y]
+            left_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[9] == y]
         if len(right_edge):
             for piece in right_edge:
                 self.next_candidates[piece].add(3)
@@ -120,10 +121,11 @@ class Puzzle:
         # vertical frame
         bottom_edge = []
         upper_edge = []
+        print(f"vertical axis size: {self.relative_dims[6] - self.relative_dims[12] + 1 }")
 
-        if self.relative_dims[6] - self.relative_dims[12] == self.axis_size - 1:
-            bottom_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[6] == y]
-            upper_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[12] == y]
+        if self.relative_dims[6] - self.relative_dims[12] + 1 == self.axis_size:
+            bottom_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[6] == x]
+            upper_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[12] == x]
         if len(bottom_edge):
             for piece in bottom_edge:
                 self.next_candidates[piece].add(6)
@@ -274,7 +276,7 @@ def predict_3(images: list):
         crops = reshape_all(img, 64, param['Discri']['x_mean'], param['Discri']['x_std'])
         num_crops = len(crops)
         cuts = int(sqrt(num_crops))
-        awnser = [x if x< cuts**2 else -1 for x in range(num_crops) ]
+        awnser = [x if x< cuts**2 else -1 for x in range(num_crops)]
         labels = assemble(crop_list=crops, matcher=model)
         accuary.append(np.mean(labels == awnser))
 
