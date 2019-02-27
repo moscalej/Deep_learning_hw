@@ -1,16 +1,18 @@
 # %%
+from math import sqrt
+
 from numba import jit, njit
 import numpy as np
-from Deep_learning_hw.Final_Project.models import Preprocesses
+from Final_Project.models import Preprocesses
 import numpy as np
 from keras.models import Sequential, Model
 from collections import defaultdict
 import yaml
-from Deep_learning_hw.Final_Project.models.Preprocesses import reshape_all
+from Final_Project.models.Preprocesses import reshape_all
 from keras.models import load_model
 import cv2
 import matplotlib.pyplot as plt
-# %%
+
 clock2orient = {12: 0, 6: 1, 9: 2, 3: 3}
 orient2clock = {value: key for key, value in clock2orient.items()}
 clock2str = {12: 'above', 6: 'below', 9: 'left', 3: 'right'}
@@ -18,7 +20,7 @@ orient2str = {0: 'above', 1: 'below', 2: 'left', 3: 'right'}
 
 
 class Puzzle:
-    def __init__(self, axis_size: int, first_crop: int):
+    def __init__(self, axis_size: int, first_crop: int, num_pieces: int):
         print(f"Puzzle started with {first_crop}")
         self.cyclic_puzzle = np.ones([axis_size, axis_size]) * -1
         self.cyclic_puzzle[0, 0] = first_crop
@@ -31,6 +33,7 @@ class Puzzle:
         self.relative2ind[(0, 0)] = first_crop
         self.neighbours_def = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         self.directions_def = [3, 6, 9, 12]
+        self.num_pieces = num_pieces
 
     def add_piece(self, attach2, _2attach: int, clock: int) -> None:
         """
@@ -55,33 +58,83 @@ class Puzzle:
             self.relative_coo[_2attach] = (targetX + dX, targetY + dY)
             self.relative2ind[(targetX + dX, targetY + dY)] = _2attach
             curr_dim = self.relative_dims[direct]
-            if max(abs(dX * targetX), abs(dY * targetY)) == curr_dim:  # check if relative dimension expanded
-                self.relative_dims[direct] = self.relative_dims[direct] + 1
+            changed_axis = [abs(dX), abs(dY)].index(1)
+            temp = self.relative_coo[_2attach][changed_axis]
+            expand_dim = False
+            if dX + dY > 0:
+                if temp > curr_dim and temp > 0:
+                    expand_dim = True
+            elif dX + dY < 0:
+                if temp < curr_dim and temp < 0:
+                    expand_dim = True
+            if expand_dim:  # check if relative dimension expanded
+                self.relative_dims[direct] = self.relative_dims[direct] + dY + dX
             (absX, absY) = self._get_abs_coo(self.relative_coo[_2attach][0], self.relative_coo[_2attach][1])
             self.cyclic_puzzle[absX, absY] = _2attach  # put the piece in the puzzle
             neigh_tups = self._get_neigh(absX, absY)
             new_directs = set([3, 6, 9, 12])
             for (crop_ind, direct_) in neigh_tups:  # directions relative to new
+                new_directs.add(direct_)  # avoid key errors
                 new_directs.remove(direct_)
                 rem = (6 + direct_) % 12 if direct_ != 6 else 12
+                self.next_candidates[crop_ind].add(rem)
                 self.next_candidates[crop_ind].remove(rem)  # remove opposite direction
             self.next_candidates[_2attach] = new_directs
+            self._remove_out_of_frame()
 
     def get_puzzle(self, mode='label'):
         sorted = []
-        label = []
-        rel_row = -self.relative_dims[9]
+        label = [-1] * self.num_pieces
+        rel_row = self.relative_dims[12]
+        location_count = 0
         for row in range(self.axis_size):
-            rel_col = -self.relative_dims[12]
+            rel_col = self.relative_dims[9]
             for col in range(self.axis_size):
                 sorted.append(int(self.cyclic_puzzle[self._get_abs_coo(rel_row, rel_col)]))
-                label.append(int(self.relative2ind[(rel_row, rel_col)]))
+                # label.append(int())
+                label[self.relative2ind[(rel_row, rel_col)]] = location_count
+                location_count += 1
                 rel_col += 1
             rel_row += 1
         if mode == 'label':
             return label
         else:
             return sorted
+
+    def _remove_out_of_frame(self):
+        # horizontal frame
+        right_edge = []
+        left_edge = []
+        # print(f"horizontal axis size: {self.relative_dims[3] - self.relative_dims[9] + 1}")
+        if self.relative_dims[3] - self.relative_dims[9] + 1 == self.axis_size:
+            right_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[3] == y]
+            left_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[9] == y]
+        if len(right_edge):
+            for piece in right_edge:
+                self.next_candidates[piece].add(3)
+                self.next_candidates[piece].remove(3)
+        if len(left_edge):
+            for piece in left_edge:
+                self.next_candidates[piece].add(9)
+                self.next_candidates[piece].remove(9)
+
+        # vertical frame
+        bottom_edge = []
+        upper_edge = []
+        # print(f"vertical axis size: {self.relative_dims[6] - self.relative_dims[12] + 1 }")
+
+        if self.relative_dims[6] - self.relative_dims[12] + 1 == self.axis_size:
+            bottom_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[6] == x]
+            upper_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[12] == x]
+        if len(bottom_edge):
+            for piece in bottom_edge:
+                self.next_candidates[piece].add(6)
+                self.next_candidates[piece].remove(6)
+
+        if len(upper_edge):
+            for piece in upper_edge:
+                self.next_candidates[piece].add(12)
+                self.next_candidates[piece].remove(12)
 
     def _get_neigh(self, absX, absY):
         neighbours = self.neighbours_def
@@ -144,7 +197,7 @@ def fast_fill_mat(predic: np.ndarray, keys: list, results: np.ndarray) -> np.nda
     """
     for pred, key in zip(predic, keys):
         results[key] = pred
-    results /= results.sum(axis=1, keepdims=True) + 1e-20
+    # results /= results.sum(axis=1, keepdims=True) + 1e-20
     return results
 
 
@@ -153,7 +206,7 @@ def choose_next(candidates, match_prob_dict):
     best_candidate_prob = 0 - 1e-9
     if candidates == []:  # choose greedy  # todo smart choice
         for candidate_ind in range(match_prob_dict.shape[0]):
-            attach2 = match_prob_dict[:,candidate_ind,:]  # candidate is a matrix num_crops X directions
+            attach2 = match_prob_dict[:, candidate_ind, :]  # candidate is a matrix num_crops X directions
             max_matches_inds = np.argmax(attach2, axis=0)
             max_matches = attach2[max_matches_inds]  # prob_list
             mean_match_prob = np.mean(max_matches)
@@ -183,14 +236,19 @@ def matcher_wrap(matcher, crop1, crop2, orient):
 
 
 # High Level
+
+
+def chooss_ood(prob_tensor, crop_num):
+    return prob_tensor[:, :, :4]
+
+
 def assemble(crop_list: list, matcher: Model) -> np.array:
     crop_num = len(crop_list)
     axis_size = int(np.sqrt(crop_num))
-
     prob_tensor = get_prob_dict(crop_list, matcher)  # sorted dictionary
-
-    anchor_crop, _, _ = choose_next([], prob_tensor)
-    puzzle = Puzzle(axis_size, anchor_crop)
+    prob_tensor_cut = chooss_ood(prob_tensor, crop_num)
+    anchor_crop, _, _ = choose_next([], prob_tensor_cut)
+    puzzle = Puzzle(axis_size, anchor_crop, crop_num)
 
     for ind in range(axis_size ** 2 - 1):
         candidates = puzzle.next_candidates
@@ -200,18 +258,34 @@ def assemble(crop_list: list, matcher: Model) -> np.array:
     return puzzle.get_puzzle()
 
 
-def predict_2(images, showimage=True):
+def predict_2(images: list, showimage: bool = True):
     with open(
-            r'C:\Users\afinkels\Desktop\private\Technion\Master studies\Deep Learning\HW\hw_repo\Deep_learning_hw\Final_Project\parameters.YAML')as fd:  # todo
+            r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\parameters.YAML')as fd:  # todo
         param = yaml.load(fd)
     model = load_model(param['Discri']['path'])
-    crops = reshape_all(images, 64)
+    crops = reshape_all(images, 64, param['Discri']['x_mean'], param['Discri']['x_std'])
     if showimage:
         plot_crops(crops)
     labels = assemble(crop_list=crops, matcher=model)
     if showimage:
         plot_in_order(labels, images)
     return labels
+
+def predict_3(images: list):
+    with open(
+            r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\parameters.YAML')as fd:  # todo
+        param = yaml.load(fd)
+    model = load_model(param['Discri']['path'])
+    accuary = []
+    for img in images:
+        crops = reshape_all(img, 64)  # , param['Discri']['x_mean'], param['Discri']['x_std']
+        num_crops = len(crops)
+        cuts = int(sqrt(num_crops))
+        awnser = [x if x< cuts**2 else -1 for x in range(num_crops)]
+        labels = assemble(crop_list=crops, matcher=model)
+        accuary.append(np.mean(labels == awnser))
+
+    return np.mean(accuary)
 
 
 # test for assembler
@@ -242,25 +316,30 @@ def test_anssemble():
     puzzle.get_puzzle()
     return puzzle.get_puzzle('a')
 
+
 def sinkhorn(A, n_iter=4):
     for i in range(n_iter):
         A /= A.sum(axis=1, keepdims=True) + 1e-20
         A /= A.sum(axis=2, keepdims=True) + 1e-20
     return A
 
+
 def plot_crops(crops):
     crop_num = len(crops)
     axis_size = int(np.sqrt(crop_num))
     fig = plt.figure(figsize=(axis_size, axis_size))
-    ax = [plt.subplot(axis_size, axis_size, i + 1) for i in range(crop_num)]
+    ax = [plt.subplot(axis_size+1, axis_size, i + 1) for i in range(crop_num)]
     for ind, crop in enumerate(crops):
         ax[ind].imshow(crop)
-        plt.imshow(crop)
+        ax[ind].set_title(ind)
+        # plt.imshow(crop)
         ax[ind].set_aspect('equal')
         ax[ind].set_xticklabels([])
         ax[ind].set_yticklabels([])
     fig.subplots_adjust(wspace=0, hspace=0)
+    fig.suptitle("Original crops")
     plt.show()
+
 
 def plot_in_order(labels, crops):
     crop_num = len(labels)
