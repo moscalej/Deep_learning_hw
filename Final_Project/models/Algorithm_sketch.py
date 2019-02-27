@@ -21,7 +21,7 @@ orient2str = {0: 'above', 1: 'below', 2: 'left', 3: 'right'}
 
 class Puzzle:
     def __init__(self, axis_size: int, first_crop: int, num_pieces: int):
-        print(f"Puzzle started with {first_crop}")
+        # print(f"Puzzle started with {first_crop}")
         self.cyclic_puzzle = np.ones([axis_size, axis_size]) * -1
         self.cyclic_puzzle[0, 0] = first_crop
         self.axis_size = axis_size
@@ -31,8 +31,10 @@ class Puzzle:
         self.relative_coo[first_crop] = (0, 0)  # (right, left)
         self.relative2ind = dict()
         self.relative2ind[(0, 0)] = first_crop
-        self.neighbours_def = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-        self.directions_def = [3, 6, 9, 12]
+        # self.neighbours_def = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        # self.directions_def = [3, 6, 9, 12]
+        self.neighbours_def = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        self.directions_def = [12, 6, 9, 3]
         self.num_pieces = num_pieces
 
     def add_piece(self, attach2, _2attach: int, clock: int) -> None:
@@ -48,15 +50,17 @@ class Puzzle:
         :return:
         :rtype: None
         """
-        print(f"adding puzzle piece: {_2attach} {clock2str[clock]} to {attach2}")
+        # print(f"adding puzzle piece: {_2attach} {clock2str[clock]} to {attach2}")
         neighbours = self.neighbours_def
         directions = self.directions_def
         (targetX, targetY) = self.relative_coo[attach2]  # relative coo
         for direct, (dX, dY) in zip(directions, neighbours):
             if direct != clock:  # execute given orientation
                 continue
-            self.relative_coo[_2attach] = (targetX + dX, targetY + dY)
-            self.relative2ind[(targetX + dX, targetY + dY)] = _2attach
+            relX = targetX + dX
+            relY = targetY + dY
+            self.relative_coo[_2attach] = (relX, relY)
+            self.relative2ind[(relX, relY)] = _2attach
             curr_dim = self.relative_dims[direct]
             changed_axis = [abs(dX), abs(dY)].index(1)
             temp = self.relative_coo[_2attach][changed_axis]
@@ -69,12 +73,12 @@ class Puzzle:
                     expand_dim = True
             if expand_dim:  # check if relative dimension expanded
                 self.relative_dims[direct] = self.relative_dims[direct] + dY + dX
-            (absX, absY) = self._get_abs_coo(self.relative_coo[_2attach][0], self.relative_coo[_2attach][1])
+            (absX, absY) = self._get_cyclic_coo(relX, relY)
             self.cyclic_puzzle[absX, absY] = _2attach  # put the piece in the puzzle
-            neigh_tups = self._get_neigh(absX, absY)
+            neigh_tups = self._get_neigh(relX, relY)
             new_directs = set([3, 6, 9, 12])
             for (crop_ind, direct_) in neigh_tups:  # directions relative to new
-                new_directs.add(direct_)  # avoid key errors
+                # new_directs.add(direct_)  # avoid key errors
                 new_directs.remove(direct_)
                 rem = (6 + direct_) % 12 if direct_ != 6 else 12
                 self.next_candidates[crop_ind].add(rem)
@@ -90,7 +94,7 @@ class Puzzle:
         for row in range(self.axis_size):
             rel_col = self.relative_dims[9]
             for col in range(self.axis_size):
-                sorted.append(int(self.cyclic_puzzle[self._get_abs_coo(rel_row, rel_col)]))
+                sorted.append(int(self.cyclic_puzzle[self._get_cyclic_coo(rel_row, rel_col)]))
                 # label.append(int())
                 label[self.relative2ind[(rel_row, rel_col)]] = location_count
                 location_count += 1
@@ -105,7 +109,6 @@ class Puzzle:
         # horizontal frame
         right_edge = []
         left_edge = []
-        print(f"horizontal axis size: {self.relative_dims[3] - self.relative_dims[9] + 1}")
         if self.relative_dims[3] - self.relative_dims[9] + 1 == self.axis_size:
             right_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[3] == y]
             left_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[9] == y]
@@ -121,7 +124,6 @@ class Puzzle:
         # vertical frame
         bottom_edge = []
         upper_edge = []
-        print(f"vertical axis size: {self.relative_dims[6] - self.relative_dims[12] + 1 }")
 
         if self.relative_dims[6] - self.relative_dims[12] + 1 == self.axis_size:
             bottom_edge = [piece for (x, y), piece in self.relative2ind.items() if self.relative_dims[6] == x]
@@ -136,15 +138,28 @@ class Puzzle:
                 self.next_candidates[piece].add(12)
                 self.next_candidates[piece].remove(12)
 
-    def _get_neigh(self, absX, absY):
+    def _get_neigh(self, relX, relY):
         neighbours = self.neighbours_def
         directions = self.directions_def
-        return [(self.cyclic_puzzle[self._get_abs_coo(absX + dX, absY + dY)], directions[ind]) for ind, (dX, dY) in
-                enumerate(neighbours)
-                if self.cyclic_puzzle[self._get_abs_coo(absX + dX, absY + dY)] != -1]
+        neigh_tups = []
+        for ind, (dX, dY) in enumerate(neighbours):
+            candidate = (relX + dX, relY + dY)
+            if candidate in self.relative2ind.keys():
+                neigh_tups.append((self.relative2ind[candidate], directions[ind]))
+        return neigh_tups
 
-    def _get_abs_coo(self, relX, relY):
-        return (relX % self.axis_size, relY % self.axis_size)
+
+
+    def _get_cyclic_coo(self, relX, relY):
+        x_cyclic = relX % self.axis_size
+        y_cyclic = relY % self.axis_size
+        return (x_cyclic, y_cyclic)
+
+    def get_neigh4candidate(self, attach2, orient):
+        (targetX, targetY) = self.relative_coo[attach2]
+        (dX, dY) = self.neighbours_def[orient]
+        relX_cand, relY_cand = (targetX + dX, targetY + dY)
+        return self._get_neigh(relX_cand, relY_cand)
 
 
 def get_prob_dict(crop_list: list, matcher: Model) -> np.ndarray:
@@ -160,21 +175,26 @@ def get_prob_dict(crop_list: list, matcher: Model) -> np.ndarray:
     directions_def = [0, 1, 2, 3]  # [up, down, left, right]
     crop_num = len(crop_list)
     keys = []
-    tasks_0 = []
-    tasks_1 = []
+    tasks = []
 
-    for candidate in range(crop_num):
-        for center in range(crop_num):
-            keys.append((candidate, center))  # (center of the universe, candidate)
-            tasks_0.append(crop_list[center])
-            tasks_1.append(crop_list[candidate])
+    for _2attach in range(crop_num):
+        for attach2 in range(crop_num):
+            for orient in directions_def:
+                keys.append(tuple([_2attach, attach2, orient]))
+                # if _2attach == 12 and attach2 == 7 and orient2str[orient] == 'below':
+                    # stiched_img = Preprocesses.stich(crop_list[attach2], crop_list[_2attach], orient)
+                    # fig = plt.figure()
+                    # fig.clf()
+                    # fig.suptitle(f"Task: {_2attach} {orient2str[orient]} to {attach2}", fontsize=16)
+                    # plt.imshow(stiched_img)
+                    # plt.show()
+                tasks.append(Preprocesses.stich(crop_list[attach2], crop_list[_2attach], orient))
 
-    tasks_0 = np.expand_dims(np.array(tasks_0), 3)
-    tasks_1 = np.expand_dims(np.array(tasks_1), 3)
-    results = np.zeros([crop_num, crop_num, 5], dtype=np.float64)
-    print(f'Shape of task {tasks_0.shape}, {tasks_1.shape}')
-    predicted = matcher.predict([tasks_0, tasks_1])
-    return fast_fill_mat(predicted, keys, results)
+    tasks = np.array(tasks)
+    results = np.zeros([crop_num, crop_num, 4], dtype=np.float64)
+    print(f'Shape of task {tasks.shape}')
+    predicted = matcher.predict(tasks)
+    return fast_fill_mat(predicted[:, 1], keys, results)
 
 
 # @njit()
@@ -196,10 +216,10 @@ def fast_fill_mat(predic: np.ndarray, keys: list, results: np.ndarray) -> np.nda
     return results
 
 
-def choose_next(candidates, match_prob_dict):
+def choose_next(puzzle, match_prob_dict):
     best_candidate = (-1, -1, -1)
     best_candidate_prob = 0 - 1e-9
-    if candidates == []:  # choose greedy  # todo smart choice
+    if puzzle == []:  # choose greedy  # todo smart choice
         for candidate_ind in range(match_prob_dict.shape[0]):
             attach2 = match_prob_dict[:, candidate_ind, :]  # candidate is a matrix num_crops X directions
             max_matches_inds = np.argmax(attach2, axis=0)
@@ -210,16 +230,39 @@ def choose_next(candidates, match_prob_dict):
                 best_candidate = (candidate_ind, None, None)
         match_prob_dict[best_candidate[0], :, :] = -1
     else:
+        candidates = puzzle.next_candidates
         for attach2, clocks in candidates.items():
             _2attach_mat = match_prob_dict[:, attach2, :]
             for clock in clocks:
                 orient = clock2orient[clock]
                 options = _2attach_mat[:, orient]
                 _2attach = np.argmax(options)
-                best_prob = options[_2attach]
+                # we are considering _2attach
+                # we want to know its relative coo in the puzzle if chosen
+                # and check if it matches its other potential neighbours
+                # attach2 + orient = coordinate
+                # coordinate -> get neighbours
+                neigh_tups = puzzle.get_neigh4candidate(attach2, orient)  # (neigh, clock)
+                if len(neigh_tups) > 1:
+                    neigh_probs = []
+                    for (neigh, clock) in neigh_tups:
+                        clock = (6 + clock) % 12 if clock != 6 else 12  # get opposite orientation
+                        orient_ = clock2orient[clock]
+                        neigh_prob = match_prob_dict[_2attach, int(neigh), orient_]
+                        if neigh_prob != -1:
+                            neigh_probs += [neigh_prob]
+                        # neigh_prob = _2attach_mat[neigh, orient]
+                else:
+                    neigh_probs = [options[_2attach]]
+                best_prob = np.mean(neigh_probs) + (len(neigh_probs)-1)*0.2  # bonus for matching more than one
                 if best_prob > best_candidate_prob:
+                    best_neigh_tups = neigh_tups
+                    best_neigh_probs = neigh_probs
                     best_candidate_prob = best_prob
                     best_candidate = tuple([_2attach, attach2, orient2clock[orient]])
+        # print(best_neigh_probs)
+        # print(best_neigh_tups)
+        # print(f"attaching {best_candidate[0]} {clock2str[best_candidate[2]]} to  {best_candidate[1]} ")
         match_prob_dict[best_candidate[0], :, :] = -1
 
     return best_candidate
@@ -246,10 +289,10 @@ def assemble(crop_list: list, matcher: Model) -> np.array:
     puzzle = Puzzle(axis_size, anchor_crop, crop_num)
 
     for ind in range(axis_size ** 2 - 1):
-        candidates = puzzle.next_candidates
-        _2attach, attach2, orient = choose_next(candidates, prob_tensor)
+        _2attach, attach2, orient = choose_next(puzzle, prob_tensor)
         puzzle.add_piece(attach2, _2attach, orient)
-    print(puzzle.cyclic_puzzle)
+    # print(puzzle.cyclic_puzzle)
+    # print(puzzle.get_puzzle())
     return puzzle.get_puzzle()
 
 

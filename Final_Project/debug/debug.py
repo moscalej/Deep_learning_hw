@@ -5,8 +5,8 @@ from Final_Project.models.Preprocesses import pre_process_data, processed2train_
 
 SHAPE = 64
 
-path_train = [r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\data\toy_data']
-
+# path_train = [r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\data\toy_data']
+path_train = [r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\data\images', r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\data\documents']
 processed_train = pre_process_data(path_train, shape=SHAPE, cuts=5, normalize=False)
 
 
@@ -26,4 +26,4 @@ def create_test(images: list, cuts: int):
 
 p = create_test(processed_train, 5)
 
-predict_3(p)
+print(f"accuracy: {predict_3(p)}")
