@@ -70,29 +70,21 @@ def reshape_all(images: list, sise: int, mean: float, std: float) -> list:
 def stich(img1, img2, orient):
     # (up, down, left, right)
     if orient == 0:
-        additional1 = np.sum(img1, axis=0)
         img1_top = img1[0:2, :]
-        additional2 = np.sum(img2, axis=0)
         img2_bottom = img2[-2:, :]
-        stiched = np.rot90(np.concatenate([additional2, img2_bottom, img1_top, additional1], axis=0))
+        stiched = np.rot90(np.concatenate([img2_bottom, img1_top], axis=0))
     elif orient == 1:
-        additional1 = np.sum(img1, axis=0)
-        additional2 = np.sum(img2, axis=0)
         img1_bottom = img1[-2:, :]
         img2_top = img2[0:2, :]
-        stiched = np.rot90(np.concatenate([additional1, img1_bottom, img2_top, additional2], axis=0))
+        stiched = np.rot90(np.concatenate([img1_bottom, img2_top], axis=0))
     elif orient == 2:
-        additional1 = np.sum(img1, axis=1)
-        additional2 = np.sum(img2, axis=1)
         img1_left = img1[:, 0:2]
         img2_right = img2[:, -2:]
-        stiched = np.concatenate([additional2, img2_right, img1_left, additional1], axis=1)
+        stiched = np.concatenate([img2_right, img1_left], axis=1)
     elif orient == 3:
-        additional1 = np.sum(img1, axis=1)
-        additional2 = np.sum(img2, axis=1)
         img1_right = img1[:, -2:]
         img2_left = img2[:, 0:2]
-        stiched = np.concatenate([additional1, img1_right, img2_left, additional1], axis=1)
+        stiched = np.concatenate([img1_right, img2_left], axis=1)
     else:
         return "error"
     return stiched

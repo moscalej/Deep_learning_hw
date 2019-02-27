@@ -26,11 +26,11 @@ path_train = [r'Final_Project\data\images', r'Final_Project\data\documents']
 path_validation = r'Final_Project\data\images_small'
 
 path_D = r'C:\Users\amoscoso\Documents\Technion\deeplearning\Deep_learning_hw\Final_Project\data\documents'
-processed_train = pre_process_data(path_train, shape=SHAPE, cuts=4)
+processed_train = pre_process_data(path_train, shape=SHAPE, cuts=5)
 # processed_validation = pre_process_data([path_validation], shape=SHAPE, cuts=5)
 # trainX_0,trainX_1, trainY = processed2train_2_chanel(a,5)
 trainX_0, trainX_1, trainY = processed2train_2_chanel(processed_train, 4)
-# valX, valY = processed2train(processed_validation, 5, mode='validation')
+valX, valY = processed2train(processed_train, 5, mode='train')
 # %%
 model = create_arch_discrimitor(ud_lr='ds', weight_decay=8e-5, input_size=SHAPE)
 reduce_lr = ReduceLROnPlateau(monitor='loss',
