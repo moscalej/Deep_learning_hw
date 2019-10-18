@@ -1,7 +1,8 @@
-# Deep Learning
-This repository contains code to solve the Hw from deep learning each hw targets a diferent topic from deeplearning 
+
+# Technion Israel Institute of Technology - CS236606 Deep Learning
+This repository contains  HW Solutions
 
 ## Content
-- [HW2](HW2/README.md)
-- [HW3](HW3/README.md)
-- [HW4](HW4/README.md)
+- *Deep Neural Network Implementation from "scratch" (Numpy)* [HW2](HW2/README.md)
+- *Limited Resources Architecture Design Optimization; Transfer Learning* [HW3](HW3/README.md)
+- *Sequential data architectures (applied to Natural Language Processing (NLP))* [HW4](HW4/README.md)
