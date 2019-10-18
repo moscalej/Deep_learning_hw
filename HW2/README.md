@@ -1,23 +1,3 @@
-
-
-
-HW2:            github:  https://github.com/moscalej/Deep_learning_hw
-
-Files:
-
-                report.pdf
-
-                Layer.py
-                Macros.py
-                mydnn.py
-                Nodes.py
-                main.py
-                regression.py
-                Test.py
-                README.md
-                requirements.txt
-
-#Autors
-- Alejandro Moscoso moscalej@gmail.com
-- Alex Finkelshtein : 307573378  
-- Zachary Bamberger 
+# Technion Israel Institute of Technology - CS236606 Deep Learning
+## HW2 Deep Neural Network Implementation from "scratch" (Numpy)
+In this homework we implement the classes, methods and back propogation mechanism for building a modular Deep Neural Net
