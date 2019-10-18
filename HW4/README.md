@@ -1,8 +1,9 @@
+# Technion Israel Institute of Technology - CS236606 Deep Learning
 
-
-# HW4:  
-This file contain the files need it for Hw 4, in this hw we had the ojective to create a review network
-generator based on IMDB review using RNN architectures 
+## HW4: *Sequential data architectures (applied to Natural Language Processing (NLP))*
+In this HW we solved two tasks:
+- Review Generator with semantic control (Positive\Negative) trained on IMDB dataset
+- Trump random tweet Generator,
 
 Links
 ----          
@@ -24,6 +25,6 @@ Links
     requirements.txt
     
 ### Authors :       
-* Alexander Finkelshtein : 307573378
-* Alejandro Moscoso : 332336908
+* Alexander Finkelshtein 
+* Alejandro Moscoso 
 
